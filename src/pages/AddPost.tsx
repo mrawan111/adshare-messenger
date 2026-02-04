@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Upload, ImageIcon, X } from "lucide-react";
@@ -10,15 +10,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function AddPost() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { isAdmin, isLoading: authLoading } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [description, setDescription] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !isAdmin) {
+      toast.error("Access denied. Admins only.");
+      navigate("/");
+    }
+  }, [isAdmin, authLoading, navigate]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -104,6 +113,20 @@ export default function AddPost() {
     }
     createMutation.mutate();
   };
+
+  if (authLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center py-16">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!isAdmin) {
+    return null;
+  }
 
   return (
     <Layout>

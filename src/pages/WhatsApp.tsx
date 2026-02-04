@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,10 +9,20 @@ import { ContactTable } from "@/components/contacts/ContactTable";
 import { MessageComposer } from "@/components/whatsapp/MessageComposer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function WhatsApp() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { isAdmin, isLoading: authLoading } = useAuth();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!authLoading && !isAdmin) {
+      toast.error("Access denied. Admins only.");
+      navigate("/");
+    }
+  }, [isAdmin, authLoading, navigate]);
 
   const { data: contacts = [], isLoading } = useQuery({
     queryKey: ["contacts"],
@@ -24,6 +35,7 @@ export default function WhatsApp() {
       if (error) throw error;
       return data;
     },
+    enabled: isAdmin,
   });
 
   const addContactMutation = useMutation({
@@ -87,6 +99,20 @@ export default function WhatsApp() {
   const handleDeselectAll = () => {
     setSelectedIds(new Set());
   };
+
+  if (authLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center py-16">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!isAdmin) {
+    return null;
+  }
 
   return (
     <Layout>

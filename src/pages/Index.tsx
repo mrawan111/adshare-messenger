@@ -6,9 +6,11 @@ import { Layout } from "@/components/layout/Layout";
 import { PostGrid } from "@/components/posts/PostGrid";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Index() {
   const queryClient = useQueryClient();
+  const { isAdmin } = useAuth();
 
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ["posts"],
@@ -45,16 +47,18 @@ export default function Index() {
             Advertising Posts
           </h1>
           <p className="mt-1 text-muted-foreground">
-            Manage and share your advertising content
+            {isAdmin ? "Manage and share your advertising content" : "Browse advertising content"}
           </p>
         </div>
 
-        <Link to="/add-post">
-          <Button className="gap-2 gradient-primary">
-            <PlusCircle className="h-4 w-4" />
-            Add New Post
-          </Button>
-        </Link>
+        {isAdmin && (
+          <Link to="/add-post">
+            <Button className="gap-2 gradient-primary">
+              <PlusCircle className="h-4 w-4" />
+              Add New Post
+            </Button>
+          </Link>
+        )}
       </div>
 
       {isLoading ? (
