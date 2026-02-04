@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Upload, ImageIcon } from "lucide-react";
+import { ArrowLeft, Upload, ImageIcon, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,44 +14,95 @@ import { toast } from "sonner";
 export default function AddPost() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [imageUrl, setImageUrl] = useState("");
-  const [description, setDescription] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [description, setDescription] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select an image file");
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("Image must be less than 10MB");
+        return;
+      }
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearImage = () => {
+    setSelectedFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("posts").insert({
-        image_url: imageUrl,
+      if (!selectedFile) throw new Error("No image selected");
+
+      setIsUploading(true);
+
+      // Generate unique filename
+      const fileExt = selectedFile.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from("post-images")
+        .upload(fileName, selectedFile);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("post-images")
+        .getPublicUrl(fileName);
+
+      // Create post with image URL
+      const { error: insertError } = await supabase.from("posts").insert({
+        image_url: urlData.publicUrl,
         description,
       });
-      if (error) throw error;
+
+      if (insertError) throw insertError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       toast.success("Post created successfully!");
       navigate("/");
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error creating post:", error);
       toast.error("Failed to create post");
+    },
+    onSettled: () => {
+      setIsUploading(false);
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!imageUrl.trim() || !description.trim()) {
-      toast.error("Please fill in all fields");
+    if (!selectedFile) {
+      toast.error("Please select an image");
+      return;
+    }
+    if (!description.trim()) {
+      toast.error("Please enter a description");
       return;
     }
     createMutation.mutate();
-  };
-
-  const handleImageUrlChange = (url: string) => {
-    setImageUrl(url);
-    if (url.match(/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i) || url.startsWith("https://")) {
-      setImagePreview(url);
-    } else {
-      setImagePreview(null);
-    }
   };
 
   return (
@@ -78,40 +128,46 @@ export default function AddPost() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="imageUrl">Image URL</Label>
-                <Input
-                  id="imageUrl"
-                  value={imageUrl}
-                  onChange={(e) => handleImageUrlChange(e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  required
+                <Label>Image</Label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Paste a direct link to an image (JPG, PNG, GIF, WebP)
-                </p>
-              </div>
 
-              {imagePreview && (
-                <div className="relative aspect-video overflow-hidden rounded-lg border border-border bg-muted">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="h-full w-full object-cover"
-                    onError={() => setImagePreview(null)}
-                  />
-                </div>
-              )}
-
-              {!imagePreview && imageUrl && (
-                <div className="flex aspect-video items-center justify-center rounded-lg border border-dashed border-border bg-muted/50">
-                  <div className="text-center">
-                    <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Image preview will appear here
-                    </p>
+                {imagePreview ? (
+                  <div className="relative aspect-video overflow-hidden rounded-lg border border-border bg-muted">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={clearImage}
+                      className="absolute right-2 top-2 rounded-full bg-foreground/80 p-1.5 text-background transition-colors hover:bg-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex aspect-video w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 transition-colors hover:border-primary hover:bg-muted"
+                  >
+                    <ImageIcon className="mb-3 h-12 w-12 text-muted-foreground/50" />
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Click to upload image
+                    </span>
+                    <span className="mt-1 text-xs text-muted-foreground/70">
+                      JPG, PNG, GIF, WebP up to 10MB
+                    </span>
+                  </button>
+                )}
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
@@ -132,15 +188,16 @@ export default function AddPost() {
                   variant="outline"
                   onClick={() => navigate("/")}
                   className="flex-1"
+                  disabled={isUploading}
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
-                  disabled={createMutation.isPending}
+                  disabled={createMutation.isPending || isUploading}
                   className="flex-1 gradient-primary"
                 >
-                  {createMutation.isPending ? "Creating..." : "Create Post"}
+                  {isUploading ? "Uploading..." : "Create Post"}
                 </Button>
               </div>
             </form>
