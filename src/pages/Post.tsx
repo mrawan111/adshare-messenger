@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { t } from "@/i18n";
 
-const APPLY_WHATSAPP_NUMBER = "01124188522";
+const APPLY_WHATSAPP_NUMBER = "+201124188522";
 
 export default function Post() {
   const { id } = useParams<{ id: string }>();
@@ -38,13 +38,12 @@ export default function Post() {
     
     try {
       const postUrl = `${window.location.origin}/post/${id}`;
-      const shareText = `${post.description}\n\n${postUrl}`;
+      const shareText = `${postUrl}\n${post.description}`;
 
       if (typeof navigator !== "undefined" && typeof (navigator as Navigator).share === "function") {
         await (navigator as Navigator).share({
           title: t("appName"),
-          text: post.description,
-          url: postUrl,
+          text: shareText,
         });
         toast.success(t("posts.shareOpened"));
         return;
