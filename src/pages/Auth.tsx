@@ -10,17 +10,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { t } from "@/i18n";
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().email(t("auth.invalidEmail")),
+  password: z.string().min(6, t("auth.passwordMin")),
 });
 
 const signupSchema = z.object({
-  fullName: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().min(10, "Phone number must be at least 10 digits"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  fullName: z.string().min(2, t("auth.nameMin")),
+  email: z.string().email(t("auth.invalidEmail")),
+  phone: z.string().min(10, t("auth.phoneMin")),
+  password: z.string().min(6, t("auth.passwordMin")),
 });
 
 export default function Auth() {
@@ -62,17 +63,17 @@ export default function Auth() {
 
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
-          toast.error("Invalid email or password");
+          toast.error(t("auth.invalidCredentials"));
         } else {
           toast.error(error.message);
         }
         return;
       }
 
-      toast.success("Logged in successfully!");
+      toast.success(t("auth.loginSuccess"));
       navigate("/");
     } catch (err) {
-      toast.error("An unexpected error occurred");
+      toast.error(t("auth.unexpectedError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -111,7 +112,7 @@ export default function Auth() {
 
       if (error) {
         if (error.message.includes("already registered")) {
-          toast.error("This email is already registered. Please login instead.");
+          toast.error(t("auth.emailExists"));
         } else {
           toast.error(error.message);
         }
@@ -119,15 +120,12 @@ export default function Auth() {
       }
 
       if (data.user) {
-        // Profile and user roles are now created automatically via database trigger
-        // The trigger will also add the user to contacts if phone number is provided
-        
-        toast.success("Account created successfully! You can now login.");
+        toast.success(t("auth.signupSuccess"));
         navigate("/");
       }
     } catch (err) {
       console.error("Signup error:", err);
-      toast.error("An unexpected error occurred");
+      toast.error(t("auth.unexpectedError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -148,47 +146,47 @@ export default function Auth() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl gradient-primary">
             <MessageCircle className="h-6 w-6 text-primary-foreground" />
           </div>
-          <CardTitle className="font-display text-2xl">AdShare</CardTitle>
+          <CardTitle className="font-display text-2xl">{t("appName")}</CardTitle>
           <CardDescription>
-            Sign in to your account or create a new one
+            {t("auth.signInTitle")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="login">{t("auth.login")}</TabsTrigger>
+              <TabsTrigger value="signup">{t("auth.signup")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login" className="space-y-4 pt-4">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
+                  <Label htmlFor="login-email">{t("auth.email")}</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Mail className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="login-email"
                       type="email"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      className="pl-10"
+                      placeholder={t("auth.emailPlaceholder")}
+                      className="ps-10"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
+                  <Label htmlFor="login-password">{t("auth.password")}</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Lock className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="login-password"
                       type="password"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="pl-10"
+                      placeholder={t("auth.passwordPlaceholder")}
+                      className="ps-10"
                       required
                     />
                   </div>
@@ -199,7 +197,7 @@ export default function Auth() {
                   disabled={isSubmitting}
                   className="w-full gradient-primary"
                 >
-                  {isSubmitting ? "Signing in..." : "Sign In"}
+                  {isSubmitting ? t("auth.signingIn") : t("auth.login")}
                 </Button>
               </form>
             </TabsContent>
@@ -207,64 +205,64 @@ export default function Auth() {
             <TabsContent value="signup" className="space-y-4 pt-4">
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
+                  <Label htmlFor="signup-name">{t("auth.fullName")}</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <User className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="signup-name"
                       type="text"
                       value={signupName}
                       onChange={(e) => setSignupName(e.target.value)}
-                      placeholder="John Doe"
-                      className="pl-10"
+                      placeholder={t("auth.namePlaceholder")}
+                      className="ps-10"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email">{t("auth.email")}</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Mail className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="signup-email"
                       type="email"
                       value={signupEmail}
                       onChange={(e) => setSignupEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      className="pl-10"
+                      placeholder={t("auth.emailPlaceholder")}
+                      className="ps-10"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-phone">Phone Number</Label>
+                  <Label htmlFor="signup-phone">{t("auth.phone")}</Label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Phone className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="signup-phone"
                       type="tel"
                       value={signupPhone}
                       onChange={(e) => setSignupPhone(e.target.value)}
-                      placeholder="+1234567890"
-                      className="pl-10"
+                      placeholder={t("auth.phonePlaceholder")}
+                      className="ps-10"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password">{t("auth.password")}</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Lock className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="signup-password"
                       type="password"
                       value={signupPassword}
                       onChange={(e) => setSignupPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="pl-10"
+                      placeholder={t("auth.passwordPlaceholder")}
+                      className="ps-10"
                       required
                     />
                   </div>
@@ -275,7 +273,7 @@ export default function Auth() {
                   disabled={isSubmitting}
                   className="w-full gradient-primary"
                 >
-                  {isSubmitting ? "Creating account..." : "Create Account"}
+                  {isSubmitting ? t("auth.creatingAccount") : t("auth.signup")}
                 </Button>
               </form>
             </TabsContent>

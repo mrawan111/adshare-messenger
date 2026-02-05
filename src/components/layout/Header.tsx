@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { t } from "@/i18n";
 
 export function Header() {
   const location = useLocation();
@@ -17,10 +18,10 @@ export function Header() {
 
   // Build nav items based on role
   const navItems = [
-    { to: "/", label: "Ads", icon: Home, showAlways: true },
-    { to: "/add-post", label: "Add Post", icon: PlusCircle, adminOnly: true },
-    { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle, adminOnly: true },
-    { to: "/analytics", label: "Analytics", icon: BarChart3, adminOnly: true },
+    { to: "/", label: t("nav.ads"), icon: Home, showAlways: true },
+    { to: "/add-post", label: t("nav.addPost"), icon: PlusCircle, adminOnly: true },
+    { to: "/whatsapp", label: t("nav.whatsapp"), icon: MessageCircle, adminOnly: true },
+    { to: "/analytics", label: t("nav.analytics"), icon: BarChart3, adminOnly: true },
   ].filter((item) => item.showAlways || (item.adminOnly && isAdmin));
 
   return (
@@ -31,7 +32,7 @@ export function Header() {
             <MessageCircle className="h-5 w-5 text-primary-foreground" />
           </div>
           <span className="font-display text-xl font-bold text-foreground">
-            AdShare
+            {t("appName")}
           </span>
         </Link>
 
@@ -63,24 +64,24 @@ export function Header() {
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="start" className="w-48">
                 <div className="px-2 py-1.5">
                   <p className="text-sm font-medium">{user.email}</p>
                   <p className="text-xs text-muted-foreground">
-                    {isAdmin ? "Admin" : "User"}
+                    {isAdmin ? t("nav.admin") : t("nav.user")}
                   </p>
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut} className="text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
+                  <LogOut className="ml-2 h-4 w-4" />
+                  {t("nav.signOut")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <Link to="/auth">
               <Button variant="outline" size="sm">
-                Sign In
+                {t("nav.signIn")}
               </Button>
             </Link>
           )}

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { t } from "@/i18n";
 
 export default function AddPost() {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ export default function AddPost() {
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
-      toast.error("Access denied. Admins only.");
+      toast.error(t("addPost.accessDenied"));
       navigate("/");
     }
   }, [isAdmin, authLoading, navigate]);
@@ -33,11 +34,11 @@ export default function AddPost() {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith("image/")) {
-        toast.error("Please select an image file");
+        toast.error(t("addPost.imageOnly"));
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        toast.error("Image must be less than 10MB");
+        toast.error(t("addPost.imageTooLarge"));
         return;
       }
       setSelectedFile(file);
@@ -89,12 +90,12 @@ export default function AddPost() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
-      toast.success("Post created successfully!");
+      toast.success(t("addPost.success"));
       navigate("/");
     },
     onError: (error) => {
       console.error("Error creating post:", error);
-      toast.error("Failed to create post");
+      toast.error(t("addPost.error"));
     },
     onSettled: () => {
       setIsUploading(false);
@@ -104,11 +105,11 @@ export default function AddPost() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile) {
-      toast.error("Please select an image");
+      toast.error(t("addPost.selectImage"));
       return;
     }
     if (!description.trim()) {
-      toast.error("Please enter a description");
+      toast.error(t("addPost.enterDescription"));
       return;
     }
     createMutation.mutate();
@@ -136,7 +137,7 @@ export default function AddPost() {
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Posts
+          {t("posts.backToPosts")}
         </Link>
       </div>
 
@@ -145,13 +146,13 @@ export default function AddPost() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-display text-2xl">
               <Upload className="h-6 w-6 text-primary" />
-              Create New Post
+              {t("addPost.title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label>Image</Label>
+                <Label>{t("addPost.image")}</Label>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -164,13 +165,13 @@ export default function AddPost() {
                   <div className="relative aspect-video overflow-hidden rounded-lg border border-border bg-muted">
                     <img
                       src={imagePreview}
-                      alt="Preview"
+                      alt="معاينة"
                       className="h-full w-full object-cover"
                     />
                     <button
                       type="button"
                       onClick={clearImage}
-                      className="absolute right-2 top-2 rounded-full bg-foreground/80 p-1.5 text-background transition-colors hover:bg-foreground"
+                      className="absolute end-2 top-2 rounded-full bg-foreground/80 p-1.5 text-background transition-colors hover:bg-foreground"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -183,22 +184,22 @@ export default function AddPost() {
                   >
                     <ImageIcon className="mb-3 h-12 w-12 text-muted-foreground/50" />
                     <span className="text-sm font-medium text-muted-foreground">
-                      Click to upload image
+                      {t("addPost.clickToUpload")}
                     </span>
                     <span className="mt-1 text-xs text-muted-foreground/70">
-                      JPG, PNG, GIF, WebP up to 10MB
+                      {t("addPost.imageFormats")}
                     </span>
                   </button>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t("addPost.description")}</Label>
                 <Textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Write a compelling description for your ad..."
+                  placeholder={t("addPost.descriptionPlaceholder")}
                   rows={4}
                   required
                   className="resize-none"
@@ -213,14 +214,14 @@ export default function AddPost() {
                   className="flex-1"
                   disabled={isUploading}
                 >
-                  Cancel
+                  {t("addPost.cancel")}
                 </Button>
                 <Button
                   type="submit"
                   disabled={createMutation.isPending || isUploading}
                   className="flex-1 gradient-primary"
                 >
-                  {isUploading ? "Uploading..." : "Create Post"}
+                  {isUploading ? t("addPost.uploading") : t("addPost.create")}
                 </Button>
               </div>
             </form>

@@ -7,6 +7,7 @@ import { PostGrid } from "@/components/posts/PostGrid";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { t } from "@/i18n";
 
 export default function Index() {
   const queryClient = useQueryClient();
@@ -32,22 +33,22 @@ export default function Index() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
-      toast.success("Post deleted successfully");
+      toast.success("تم حذف الإعلان بنجاح");
     },
     onError: () => {
-      toast.error("Failed to delete post");
+      toast.error("فشل في حذف الإعلان");
     },
   });
 
   return (
     <Layout>
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="text-center sm:text-start">
           <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl">
-            Advertising Posts
+            {t("posts.title")}
           </h1>
           <p className="mt-1 text-muted-foreground">
-            {isAdmin ? "Manage and share your advertising content" : "Browse advertising content"}
+            {t("posts.subtitle")}
           </p>
         </div>
 
@@ -55,7 +56,7 @@ export default function Index() {
           <Link to="/add-post">
             <Button className="gap-2 gradient-primary">
               <PlusCircle className="h-4 w-4" />
-              Add New Post
+              {t("nav.addPost")}
             </Button>
           </Link>
         )}
@@ -69,6 +70,10 @@ export default function Index() {
               className="aspect-[4/3] animate-pulse rounded-lg bg-muted"
             />
           ))}
+        </div>
+      ) : posts.length === 0 ? (
+        <div className="py-16 text-center text-muted-foreground">
+          {t("posts.noPosts")}
         </div>
       ) : (
         <PostGrid posts={posts} onDelete={(id) => deleteMutation.mutate(id)} />
