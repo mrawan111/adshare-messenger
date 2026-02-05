@@ -47,13 +47,14 @@ export default function Post() {
         setCopied(true);
         toast.success(t("posts.shareCopied"));
         setTimeout(() => setCopied(false), 2000);
+
+        return;
       }
 
       if (typeof navigator !== "undefined" && typeof (navigator as Navigator).share === "function") {
         await (navigator as Navigator).share({
           title: t("appName"),
           text: shareText,
-          url: postUrl,
         });
         toast.success(t("posts.shareOpened"));
         return;
