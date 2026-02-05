@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { Share2, Check, Calendar, Trash2 } from "lucide-react";
+import { arSA } from "date-fns/locale";
+import { Share2, Check, Calendar, Trash2, MessageCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { t } from "@/i18n";
 
 interface PostCardProps {
   id: string;
@@ -24,6 +26,8 @@ interface PostCardProps {
   createdAt: string;
   onDelete: (id: string) => void;
 }
+
+const APPLY_WHATSAPP_NUMBER = "01124188522";
 
 export function PostCard({ id, imageUrl, description, createdAt, onDelete }: PostCardProps) {
   const [copied, setCopied] = useState(false);
@@ -36,11 +40,11 @@ export function PostCard({ id, imageUrl, description, createdAt, onDelete }: Pos
 
       if (typeof navigator !== "undefined" && typeof (navigator as Navigator).share === "function") {
         await (navigator as Navigator).share({
-          title: "Ad post",
+          title: t("appName"),
           text: description,
           url: postUrl,
         });
-        toast.success("Share opened");
+        toast.success(t("posts.shareOpened"));
         return;
       }
 
@@ -51,11 +55,19 @@ export function PostCard({ id, imageUrl, description, createdAt, onDelete }: Pos
 
       await clipboard.writeText(shareText);
       setCopied(true);
-      toast.success("Post link copied to clipboard!");
+      toast.success(t("posts.shareCopied"));
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Failed to copy to clipboard");
+      toast.error(t("posts.shareFailed"));
     }
+  };
+
+  const handleApply = () => {
+    const postUrl = `${window.location.origin}/post/${id}`;
+    const message = `${description}\n\n${postUrl}`;
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${APPLY_WHATSAPP_NUMBER}?text=${encodedMessage}`;
+    window.open(whatsappUrl, "_blank");
   };
 
   return (
@@ -63,7 +75,7 @@ export function PostCard({ id, imageUrl, description, createdAt, onDelete }: Pos
       <div className="relative aspect-video overflow-hidden">
         <img
           src={imageUrl}
-          alt="Ad post"
+          alt="إعلان"
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
@@ -74,13 +86,13 @@ export function PostCard({ id, imageUrl, description, createdAt, onDelete }: Pos
           {description}
         </p>
         
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Calendar className="h-3.5 w-3.5" />
-            <span>{format(new Date(createdAt), "MMM d, yyyy")}</span>
+            <span>{format(new Date(createdAt), "d MMM yyyy", { locale: arSA })}</span>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {isAdmin && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -94,18 +106,18 @@ export function PostCard({ id, imageUrl, description, createdAt, onDelete }: Pos
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Post</AlertDialogTitle>
+                    <AlertDialogTitle>{t("posts.deleteTitle")}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete this post? This action cannot be undone.
+                      {t("posts.deleteDescription")}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogFooter className="flex-row-reverse gap-2">
+                    <AlertDialogCancel>{t("posts.cancel")}</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={() => onDelete(id)}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      Delete
+                      {t("posts.confirmDelete")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -121,14 +133,23 @@ export function PostCard({ id, imageUrl, description, createdAt, onDelete }: Pos
               {copied ? (
                 <>
                   <Check className="h-4 w-4" />
-                  Copied
+                  {t("posts.copied")}
                 </>
               ) : (
                 <>
                   <Share2 className="h-4 w-4" />
-                  Share
+                  {t("posts.share")}
                 </>
               )}
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={handleApply}
+              className="h-8 gap-1.5 bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90"
+            >
+              <MessageCircle className="h-4 w-4" />
+              {t("posts.apply")}
             </Button>
           </div>
         </div>
