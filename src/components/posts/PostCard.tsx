@@ -27,7 +27,7 @@ interface PostCardProps {
   onDelete: (id: string) => void;
 }
 
-const APPLY_WHATSAPP_NUMBER = "01124188522";
+const APPLY_WHATSAPP_NUMBER = "+201124188522";
 
 export function PostCard({ id, imageUrl, description, createdAt, onDelete }: PostCardProps) {
   const [copied, setCopied] = useState(false);
@@ -36,13 +36,12 @@ export function PostCard({ id, imageUrl, description, createdAt, onDelete }: Pos
   const handleShare = async () => {
     try {
       const postUrl = `${window.location.origin}/post/${id}`;
-      const shareText = `${description}\n\n${postUrl}`;
+      const shareText = `${postUrl}\n${description}`;
 
       if (typeof navigator !== "undefined" && typeof (navigator as Navigator).share === "function") {
         await (navigator as Navigator).share({
           title: t("appName"),
-          text: description,
-          url: postUrl,
+          text: shareText,
         });
         toast.success(t("posts.shareOpened"));
         return;
