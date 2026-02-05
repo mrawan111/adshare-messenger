@@ -1,6 +1,6 @@
 export const ar = {
   // Common
-  appName: "أد شير",
+  appName: "الفلاح delivery",
   loading: "جاري التحميل...",
   
   // Navigation
