@@ -30,12 +30,28 @@ export function PostCard({ id, imageUrl, description, createdAt, onDelete }: Pos
   const { isAdmin } = useAuth();
 
   const handleShare = async () => {
-    const shareText = `${description}\n\n${imageUrl}`;
-    
     try {
-      await navigator.clipboard.writeText(shareText);
+      const postUrl = `${window.location.origin}/post/${id}`;
+      const shareText = `${description}\n\n${postUrl}`;
+
+      if (typeof navigator !== "undefined" && typeof (navigator as Navigator).share === "function") {
+        await (navigator as Navigator).share({
+          title: "Ad post",
+          text: description,
+          url: postUrl,
+        });
+        toast.success("Share opened");
+        return;
+      }
+
+      const clipboard = (navigator as Navigator).clipboard;
+      if (!clipboard || typeof clipboard.writeText !== "function") {
+        throw new Error("Clipboard API not available");
+      }
+
+      await clipboard.writeText(shareText);
       setCopied(true);
-      toast.success("Post copied to clipboard!");
+      toast.success("Post link copied to clipboard!");
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Failed to copy to clipboard");

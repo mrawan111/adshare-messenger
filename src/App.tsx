@@ -9,6 +9,7 @@ import AddPost from "./pages/AddPost";
 import WhatsApp from "./pages/WhatsApp";
 import Analytics from "./pages/Analytics";
 import Auth from "./pages/Auth";
+import Post from "./pages/Post";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/add-post" element={<AddPost />} />
             <Route path="/whatsapp" element={<WhatsApp />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/post/:id" element={<Post />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
