@@ -119,38 +119,9 @@ export default function Auth() {
       }
 
       if (data.user) {
-        // Create profile
-        const { error: profileError } = await supabase.from("profiles").insert({
-          user_id: data.user.id,
-          email: signupEmail,
-          phone_number: signupPhone,
-          full_name: signupName,
-        });
-
-        if (profileError) {
-          console.error("Error creating profile:", profileError);
-        }
-
-        // Create user role (default: user)
-        const { error: roleError } = await supabase.from("user_roles").insert({
-          user_id: data.user.id,
-          role: "user",
-        });
-
-        if (roleError) {
-          console.error("Error creating role:", roleError);
-        }
-
-        // Add phone to contacts via security definer function
-        const { error: contactError } = await supabase.rpc("add_user_as_contact", {
-          _name: signupName,
-          _phone_number: signupPhone,
-        });
-
-        if (contactError) {
-          console.error("Error adding contact:", contactError);
-        }
-
+        // Profile and user roles are now created automatically via database trigger
+        // The trigger will also add the user to contacts if phone number is provided
+        
         toast.success("Account created successfully! You can now login.");
         navigate("/");
       }

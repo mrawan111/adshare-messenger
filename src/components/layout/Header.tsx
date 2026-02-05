@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, PlusCircle, MessageCircle, LogOut, User } from "lucide-react";
+import { Home, PlusCircle, MessageCircle, BarChart3, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ export function Header() {
     { to: "/", label: "Ads", icon: Home, showAlways: true },
     { to: "/add-post", label: "Add Post", icon: PlusCircle, adminOnly: true },
     { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle, adminOnly: true },
+    { to: "/analytics", label: "Analytics", icon: BarChart3, adminOnly: true },
   ].filter((item) => item.showAlways || (item.adminOnly && isAdmin));
 
   return (
