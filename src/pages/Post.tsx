@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { t } from "@/i18n";
 
 const APPLY_WHATSAPP_NUMBER = "+201124188522";
+const PUBLIC_BASE_URL = "https://ad-blast-tool.lovable.app";
 
 export default function Post() {
   const { id } = useParams<{ id: string }>();
@@ -37,8 +38,8 @@ export default function Post() {
     if (!post) return;
     
     try {
-      const postUrl = `${window.location.origin}/post/${id}`;
-      const shareText = `${postUrl}\n${post.description}`;
+      const postUrl = `${PUBLIC_BASE_URL}/post/${id}`;
+      const shareText = `${postUrl}\n\n${post.description}`;
 
       if (typeof navigator !== "undefined" && typeof (navigator as Navigator).share === "function") {
         await (navigator as Navigator).share({
@@ -66,8 +67,8 @@ export default function Post() {
   const handleApply = () => {
     if (!post) return;
     
-    const postUrl = `${window.location.origin}/post/${id}`;
-    const message = `${post.description}\n\n${postUrl}`;
+    const postUrl = `${PUBLIC_BASE_URL}/post/${id}`;
+    const message = `${postUrl}\n\n${post.description}`;
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/${APPLY_WHATSAPP_NUMBER}?text=${encodedMessage}`;
     window.open(whatsappUrl, "_blank");

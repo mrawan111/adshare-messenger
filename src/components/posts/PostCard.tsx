@@ -28,6 +28,7 @@ interface PostCardProps {
 }
 
 const APPLY_WHATSAPP_NUMBER = "+201124188522";
+const PUBLIC_BASE_URL = "https://ad-blast-tool.lovable.app";
 
 export function PostCard({ id, imageUrl, description, createdAt, onDelete }: PostCardProps) {
   const [copied, setCopied] = useState(false);
@@ -35,8 +36,8 @@ export function PostCard({ id, imageUrl, description, createdAt, onDelete }: Pos
 
   const handleShare = async () => {
     try {
-      const postUrl = `${window.location.origin}/post/${id}`;
-      const shareText = `${postUrl}\n${description}`;
+      const postUrl = `${PUBLIC_BASE_URL}/post/${id}`;
+      const shareText = `${postUrl}\n\n${description}`;
 
       if (typeof navigator !== "undefined" && typeof (navigator as Navigator).share === "function") {
         await (navigator as Navigator).share({
@@ -62,8 +63,8 @@ export function PostCard({ id, imageUrl, description, createdAt, onDelete }: Pos
   };
 
   const handleApply = () => {
-    const postUrl = `${window.location.origin}/post/${id}`;
-    const message = `${description}\n\n${postUrl}`;
+    const postUrl = `${PUBLIC_BASE_URL}/post/${id}`;
+    const message = `${postUrl}\n\n${description}`;
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/${APPLY_WHATSAPP_NUMBER}?text=${encodedMessage}`;
     window.open(whatsappUrl, "_blank");
