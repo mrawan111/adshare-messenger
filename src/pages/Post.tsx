@@ -41,24 +41,27 @@ export default function Post() {
       const postUrl = `${PUBLIC_BASE_URL}/post/${id}`;
       const shareText = `${postUrl}\n\n${post.description}`;
 
+      const clipboard = (navigator as Navigator).clipboard;
+      if (clipboard && typeof clipboard.writeText === "function") {
+        await clipboard.writeText(shareText);
+        setCopied(true);
+        toast.success(t("posts.shareCopied"));
+        setTimeout(() => setCopied(false), 2000);
+      }
+
       if (typeof navigator !== "undefined" && typeof (navigator as Navigator).share === "function") {
         await (navigator as Navigator).share({
           title: t("appName"),
           text: shareText,
+          url: postUrl,
         });
         toast.success(t("posts.shareOpened"));
         return;
       }
 
-      const clipboard = (navigator as Navigator).clipboard;
       if (!clipboard || typeof clipboard.writeText !== "function") {
         throw new Error("Clipboard API not available");
       }
-
-      await clipboard.writeText(shareText);
-      setCopied(true);
-      toast.success(t("posts.shareCopied"));
-      setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error(t("posts.shareFailed"));
     }
