@@ -185,10 +185,15 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
         navigator.userAgent
       );
       
-      const url = isMobile 
-        ? `whatsapp://send?phone=${formattedPhone}&text=${encodedMessage}`
-        : `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+      if (isMobile) {
+        // On mobile, use location.href for whatsapp:// protocol to open native app
+        const url = `whatsapp://send?phone=${formattedPhone}&text=${encodedMessage}`;
+        window.location.href = url;
+        return true;
+      }
       
+      // On desktop, use window.open with wa.me
+      const url = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
       const newWindow = window.open(url, "_blank");
       
       if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
