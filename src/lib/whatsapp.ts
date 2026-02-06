@@ -25,6 +25,19 @@ export function getWhatsAppUrl(phoneNumber: string, message: string): string {
  * Opens WhatsApp chat with the given phone number and message
  */
 export function openWhatsAppChat(phoneNumber: string, message: string): void {
-  const url = getWhatsAppUrl(phoneNumber, message);
-  window.open(url, "_blank");
+  const cleanedPhone = phoneNumber.replace(/\D/g, "").replace(/^\+/, "");
+  const encodedMessage = encodeURIComponent(message);
+  
+  // Check if device is mobile
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+  
+  if (isMobile) {
+    // On mobile, use location.href for whatsapp:// protocol to open native app
+    window.location.href = `whatsapp://send?phone=${cleanedPhone}&text=${encodedMessage}`;
+  } else {
+    // On desktop, use window.open with wa.me
+    window.open(`https://wa.me/${cleanedPhone}?text=${encodedMessage}`, "_blank");
+  }
 }
