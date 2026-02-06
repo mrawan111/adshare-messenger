@@ -512,12 +512,19 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
                       Export to Excel
                     </Button>
                     <Button
-                      onClick={() => window.open('https://web.whatsapp.com', '_blank')}
+                      onClick={() => {
+                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                        if (isMobile) {
+                          window.location.href = 'whatsapp://';
+                        } else {
+                          window.open('https://web.whatsapp.com', '_blank');
+                        }
+                      }}
                       variant="outline"
                       className="flex-1"
                     >
                       <ExternalLink className="mr-2 h-4 w-4" />
-                      Open WhatsApp Web
+                      Open WhatsApp
                     </Button>
                   </div>
 
