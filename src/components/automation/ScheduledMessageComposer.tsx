@@ -169,7 +169,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const openWhatsAppChat = async (phoneNumber: string, message: string): Promise<boolean> => {
+  const openWhatsAppChatWithCheck = async (phoneNumber: string, message: string): Promise<boolean> => {
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
       
@@ -179,7 +179,15 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
       }
       
       const encodedMessage = encodeURIComponent(message);
-      const url = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+      
+      // Check if device is mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      );
+      
+      const url = isMobile 
+        ? `whatsapp://send?phone=${formattedPhone}&text=${encodedMessage}`
+        : `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
       
       const newWindow = window.open(url, "_blank");
       
@@ -258,7 +266,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
         
         setCurrentStatus(`Opening chat for ${contact.name}...`);
 
-        const success = await openWhatsAppChat(phoneNumber, personalizedMsg);
+        const success = await openWhatsAppChatWithCheck(phoneNumber, personalizedMsg);
         if (success) {
           successCount++;
         } else {
