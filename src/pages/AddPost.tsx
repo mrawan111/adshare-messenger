@@ -23,7 +23,29 @@ export default function AddPost() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [description, setDescription] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [countryCode, setCountryCode] = useState("+20");
   const [isUploading, setIsUploading] = useState(false);
+
+  const countryCodes = [
+    { code: "+20", label: "مصر +20" },
+    { code: "+966", label: "السعودية +966" },
+    { code: "+971", label: "الإمارات +971" },
+    { code: "+965", label: "الكويت +965" },
+    { code: "+974", label: "قطر +974" },
+    { code: "+973", label: "البحرين +973" },
+    { code: "+968", label: "عمان +968" },
+    { code: "+962", label: "الأردن +962" },
+    { code: "+961", label: "لبنان +961" },
+    { code: "+963", label: "سوريا +963" },
+    { code: "+964", label: "العراق +964" },
+    { code: "+212", label: "المغرب +212" },
+    { code: "+213", label: "الجزائر +213" },
+    { code: "+216", label: "تونس +216" },
+    { code: "+218", label: "ليبيا +218" },
+    { code: "+249", label: "السودان +249" },
+    { code: "+1", label: "USA +1" },
+    { code: "+44", label: "UK +44" },
+  ];
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -82,11 +104,22 @@ export default function AddPost() {
         .from("post-images")
         .getPublicUrl(fileName);
 
+      // Format phone number with selected country code
+      let formattedPhone = phoneNumber.trim();
+      if (formattedPhone) {
+        // Remove leading zero if present
+        if (formattedPhone.startsWith("0")) {
+          formattedPhone = formattedPhone.slice(1);
+        }
+        // Add country code
+        formattedPhone = countryCode + formattedPhone;
+      }
+
       // Create post with image URL
       const { error: insertError } = await supabase.from("posts").insert({
         image_url: urlData.publicUrl,
         description,
-        phone_number: phoneNumber.trim() || null,
+        phone_number: formattedPhone || null,
       });
 
       if (insertError) throw insertError;
@@ -211,14 +244,27 @@ export default function AddPost() {
 
               <div className="space-y-2">
                 <Label htmlFor="phoneNumber">{t("addPost.phoneNumber")}</Label>
-                <Input
-                  id="phoneNumber"
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="+201234567890"
-                  dir="ltr"
-                />
+                <div className="flex gap-2" dir="ltr">
+                  <select
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    {countryCodes.map((country) => (
+                      <option key={country.code} value={country.code}>
+                        {country.label}
+                      </option>
+                    ))}
+                  </select>
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="1234567890"
+                    className="flex-1"
+                  />
+                </div>
               </div>
 
               <div className="flex gap-3">
@@ -243,6 +289,6 @@ export default function AddPost() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </Layout >
   );
 }
