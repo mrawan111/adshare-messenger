@@ -5,6 +5,7 @@ interface Post {
   image_url: string;
   description: string;
   created_at: string;
+  phone_number?: string | null;
 }
 
 interface PostGridProps {
@@ -50,6 +51,7 @@ export function PostGrid({ posts, onDelete }: PostGridProps) {
           imageUrl={post.image_url}
           description={post.description}
           createdAt={post.created_at}
+          phoneNumber={post.phone_number}
           onDelete={onDelete}
         />
       ))}

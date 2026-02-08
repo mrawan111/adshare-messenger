@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -21,6 +22,7 @@ export default function AddPost() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [description, setDescription] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
@@ -84,6 +86,7 @@ export default function AddPost() {
       const { error: insertError } = await supabase.from("posts").insert({
         image_url: urlData.publicUrl,
         description,
+        phone_number: phoneNumber.trim() || null,
       });
 
       if (insertError) throw insertError;
@@ -203,6 +206,18 @@ export default function AddPost() {
                   rows={4}
                   required
                   className="resize-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">{t("addPost.phoneNumber")}</Label>
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="+201234567890"
+                  dir="ltr"
                 />
               </div>
 

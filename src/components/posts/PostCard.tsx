@@ -24,45 +24,51 @@ interface PostCardProps {
   imageUrl: string;
   description: string;
   createdAt: string;
+  phoneNumber?: string | null;
   onDelete: (id: string) => void;
 }
 
 const APPLY_WHATSAPP_NUMBER = "+201124188522";
 const PUBLIC_BASE_URL = "https://ad-blast-tool.lovable.app";
 
-export function PostCard({ id, imageUrl, description, createdAt, onDelete }: PostCardProps) {
+const DESCRIPTION_LIMIT = 150;
+
+export function PostCard({ id, imageUrl, description, createdAt, phoneNumber, onDelete }: PostCardProps) {
   const [copied, setCopied] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const { isAdmin } = useAuth();
+
+  const isLongDescription = description.length > DESCRIPTION_LIMIT;
+  const displayDescription = expanded || !isLongDescription
+    ? description
+    : description.slice(0, DESCRIPTION_LIMIT) + "...";
 
   const handleShare = async () => {
     try {
       const postUrl = `${PUBLIC_BASE_URL}/post/${id}`;
       const shareText = `${postUrl}\n\n${description}`;
 
+      // Always try to copy to clipboard first
       const clipboard = (navigator as Navigator).clipboard;
       if (clipboard && typeof clipboard.writeText === "function") {
         await clipboard.writeText(shareText);
         setCopied(true);
         toast.success(t("posts.shareCopied"));
         setTimeout(() => setCopied(false), 2000);
-
-        return;
       }
 
+      // Then try to open the native share dialog
       if (typeof navigator !== "undefined" && typeof (navigator as Navigator).share === "function") {
         await (navigator as Navigator).share({
           title: t("appName"),
           text: shareText,
         });
-        toast.success(t("posts.shareOpened"));
-        return;
-      }
-
-      if (!clipboard || typeof clipboard.writeText !== "function") {
-        throw new Error("Clipboard API not available");
       }
     } catch {
-      toast.error(t("posts.shareFailed"));
+      // If share was cancelled or failed, we already copied, so only show error if copy also failed
+      if (!copied) {
+        toast.error(t("posts.shareFailed"));
+      }
     }
   };
 
@@ -70,32 +76,43 @@ export function PostCard({ id, imageUrl, description, createdAt, onDelete }: Pos
     const postUrl = `${PUBLIC_BASE_URL}/post/${id}`;
     const message = `${postUrl}\n\n${description}`;
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${APPLY_WHATSAPP_NUMBER}?text=${encodedMessage}`;
+    const targetNumber = phoneNumber || APPLY_WHATSAPP_NUMBER;
+    const whatsappUrl = `https://wa.me/${targetNumber}?text=${encodedMessage}`;
     window.open(whatsappUrl, "_blank");
   };
 
   return (
     <Card className="group overflow-hidden shadow-card transition-all duration-300 hover:shadow-elegant hover:-translate-y-1 animate-fade-in">
-      <div className="relative aspect-video overflow-hidden">
+      <div className="relative overflow-hidden bg-muted/30 flex items-center justify-center min-h-[200px] max-h-[400px]">
         <img
           src={imageUrl}
           alt="إعلان"
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="w-full h-auto max-h-[400px] object-contain transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       </div>
-      
+
       <CardContent className="p-4">
-        <p className="mb-3 line-clamp-3 text-sm leading-relaxed text-foreground">
-          {description}
+        <p className="mb-1 text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+          {displayDescription}
         </p>
-        
+        {isLongDescription && (
+          <button
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            className="text-xs text-primary hover:underline mb-3"
+          >
+            {expanded ? t("posts.readLess") : t("posts.readMore")}
+          </button>
+        )}
+        {!isLongDescription && <div className="mb-3" />}
+
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Calendar className="h-3.5 w-3.5" />
             <span>{format(new Date(createdAt), "d MMM yyyy", { locale: arSA })}</span>
           </div>
-          
+
           <div className="flex items-center gap-2 flex-wrap">
             {isAdmin && (
               <AlertDialog>
@@ -127,7 +144,7 @@ export function PostCard({ id, imageUrl, description, createdAt, onDelete }: Pos
                 </AlertDialogContent>
               </AlertDialog>
             )}
-            
+
             <Button
               variant="outline"
               size="sm"

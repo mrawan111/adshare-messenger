@@ -2,7 +2,7 @@ export const ar = {
   // Common
   appName: "الفلاح delivery",
   loading: "جاري التحميل...",
-  
+
   // Navigation
   nav: {
     ads: "الإعلانات",
@@ -33,6 +33,8 @@ export const ar = {
     shareCopied: "تم نسخ رابط الإعلان!",
     shareOpened: "تم فتح المشاركة",
     shareFailed: "فشل في النسخ",
+    readMore: "اقرأ المزيد",
+    readLess: "إظهار أقل",
   },
 
   // Add Post
@@ -53,6 +55,7 @@ export const ar = {
     imageOnly: "يرجى اختيار ملف صورة",
     imageTooLarge: "يجب أن تكون الصورة أقل من 10MB",
     accessDenied: "غير مسموح. للمديرين فقط.",
+    phoneNumber: "رقم الواتساب للتقديم",
   },
 
   // Auth
