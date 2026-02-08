@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, PlusCircle, MessageCircle, BarChart3, LogOut, User } from "lucide-react";
+import { Home, PlusCircle, MessageCircle, BarChart3, LogOut, User, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -19,10 +19,11 @@ export function Header() {
   // Build nav items based on role
   const navItems = [
     { to: "/", label: t("nav.ads"), icon: Home, showAlways: true },
+    { to: "/invite", label: t("nav.invite"), icon: UserPlus, requiresAuth: true },
     { to: "/add-post", label: t("nav.addPost"), icon: PlusCircle, adminOnly: true },
     { to: "/whatsapp", label: t("nav.whatsapp"), icon: MessageCircle, adminOnly: true },
     { to: "/analytics", label: t("nav.analytics"), icon: BarChart3, adminOnly: true },
-  ].filter((item) => item.showAlways || (item.adminOnly && isAdmin));
+  ].filter((item) => item.showAlways || (item.adminOnly && isAdmin) || (item.requiresAuth && user));
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
