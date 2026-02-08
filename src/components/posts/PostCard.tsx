@@ -18,7 +18,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { t } from "@/i18n";
-
+import { openWhatsAppChat } from "@/lib/whatsapp";
 interface PostCardProps {
   id: string;
   imageUrl: string;
@@ -75,10 +75,8 @@ export function PostCard({ id, imageUrl, description, createdAt, phoneNumber, on
   const handleApply = () => {
     const postUrl = `${PUBLIC_BASE_URL}/post/${id}`;
     const message = `${postUrl}\n\n${description}`;
-    const encodedMessage = encodeURIComponent(message);
     const targetNumber = phoneNumber || APPLY_WHATSAPP_NUMBER;
-    const whatsappUrl = `https://wa.me/${targetNumber}?text=${encodedMessage}`;
-    window.open(whatsappUrl, "_blank");
+    openWhatsAppChat(targetNumber, message);
   };
 
   return (

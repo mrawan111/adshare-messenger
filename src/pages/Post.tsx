@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { t } from "@/i18n";
+import { openWhatsAppChat } from "@/lib/whatsapp";
 
 const APPLY_WHATSAPP_NUMBER = "+201124188522";
 const PUBLIC_BASE_URL = "https://ad-blast-tool.lovable.app";
@@ -73,9 +74,7 @@ export default function Post() {
     
     const postUrl = `${PUBLIC_BASE_URL}/post/${id}`;
     const message = `${postUrl}\n\n${post.description}`;
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${APPLY_WHATSAPP_NUMBER}?text=${encodedMessage}`;
-    window.open(whatsappUrl, "_blank");
+    openWhatsAppChat(APPLY_WHATSAPP_NUMBER, message);
   };
 
   return (

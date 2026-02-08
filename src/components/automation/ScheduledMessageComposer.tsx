@@ -169,7 +169,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const openWhatsAppChat = async (phoneNumber: string, message: string): Promise<boolean> => {
+  const openWhatsAppChatWithCheck = async (phoneNumber: string, message: string): Promise<boolean> => {
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
       
@@ -179,8 +179,21 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
       }
       
       const encodedMessage = encodeURIComponent(message);
-      const url = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
       
+      // Check if device is mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      );
+      
+      if (isMobile) {
+        // On mobile, use location.href for whatsapp:// protocol to open native app
+        const url = `whatsapp://send?phone=${formattedPhone}&text=${encodedMessage}`;
+        window.location.href = url;
+        return true;
+      }
+      
+      // On desktop, use window.open with wa.me
+      const url = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
       const newWindow = window.open(url, "_blank");
       
       if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
@@ -258,7 +271,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
         
         setCurrentStatus(`Opening chat for ${contact.name}...`);
 
-        const success = await openWhatsAppChat(phoneNumber, personalizedMsg);
+        const success = await openWhatsAppChatWithCheck(phoneNumber, personalizedMsg);
         if (success) {
           successCount++;
         } else {
@@ -499,12 +512,19 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
                       Export to Excel
                     </Button>
                     <Button
-                      onClick={() => window.open('https://web.whatsapp.com', '_blank')}
+                      onClick={() => {
+                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                        if (isMobile) {
+                          window.location.href = 'whatsapp://';
+                        } else {
+                          window.open('https://web.whatsapp.com', '_blank');
+                        }
+                      }}
                       variant="outline"
                       className="flex-1"
                     >
                       <ExternalLink className="mr-2 h-4 w-4" />
-                      Open WhatsApp Web
+                      Open WhatsApp
                     </Button>
                   </div>
 
