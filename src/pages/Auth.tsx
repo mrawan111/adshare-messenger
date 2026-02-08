@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { MessageCircle, Mail, Lock, Phone, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,8 +26,12 @@ const signupSchema = z.object({
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, isLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Get referral code from URL
+  const referralCode = searchParams.get("ref");
   
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -41,7 +45,14 @@ export default function Auth() {
 
   useEffect(() => {
     if (!isLoading && user) {
-      navigate("/");
+      // Check if there's a redirect destination stored
+      const redirectTo = sessionStorage.getItem("redirectAfterAuth");
+      if (redirectTo) {
+        sessionStorage.removeItem("redirectAfterAuth");
+        navigate(redirectTo);
+      } else {
+        navigate("/");
+      }
     }
   }, [user, isLoading, navigate]);
 
@@ -106,6 +117,7 @@ export default function Auth() {
           data: {
             full_name: signupName,
             phone_number: signupPhone,
+            referral_code: referralCode || null,
           },
         },
       });
@@ -120,6 +132,19 @@ export default function Auth() {
       }
 
       if (data.user) {
+        // If there's a valid referral code, create the referral record
+        if (referralCode && referralCode !== data.user.id) {
+          try {
+            await supabase.from("referrals").insert({
+              inviter_user_id: referralCode,
+              invited_user_id: data.user.id,
+            });
+          } catch (refError) {
+            console.error("Failed to save referral:", refError);
+            // Don't block signup if referral save fails
+          }
+        }
+        
         toast.success(t("auth.signupSuccess"));
         navigate("/");
       }

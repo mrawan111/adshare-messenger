@@ -9,6 +9,7 @@ import AddPost from "./pages/AddPost";
 import WhatsApp from "./pages/WhatsApp";
 import Analytics from "./pages/Analytics";
 import Auth from "./pages/Auth";
+import Invite from "./pages/Invite";
 import Post from "./pages/Post";
 import NotFound from "./pages/NotFound";
 
@@ -24,6 +25,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/invite" element={<Invite />} />
             <Route path="/add-post" element={<AddPost />} />
             <Route path="/whatsapp" element={<WhatsApp />} />
             <Route path="/analytics" element={<Analytics />} />

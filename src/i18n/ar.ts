@@ -9,6 +9,7 @@ export const ar = {
     addPost: "إضافة إعلان",
     whatsapp: "واتساب",
     analytics: "التحليلات",
+    invite: "ترشيح شخص",
     signIn: "تسجيل الدخول",
     signOut: "تسجيل الخروج",
     admin: "مدير",
@@ -82,6 +83,7 @@ export const ar = {
     passwordMin: "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
     nameMin: "الاسم يجب أن يكون حرفين على الأقل",
     phoneMin: "رقم الهاتف يجب أن يكون 10 أرقام على الأقل",
+    referredBy: "تمت دعوتك بواسطة صديق!",
   },
 
   // WhatsApp
@@ -116,6 +118,30 @@ export const ar = {
   groups: {
     title: "المجموعات",
     createGroup: "إنشاء مجموعة",
+  },
+
+  // Invite / Referral
+  invite: {
+    title: "ترشيح شخص",
+    subtitle: "قم بدعوة أصدقائك للتسجيل واحصل على مكافآت",
+    yourLink: "رابط الدعوة الخاص بك",
+    linkDescription: "شارك هذا الرابط مع أصدقائك للتسجيل",
+    referralLink: "رابط الإحالة",
+    copyLink: "نسخ الرابط",
+    shareLink: "مشاركة",
+    linkCopied: "تم نسخ الرابط!",
+    copyFailed: "فشل في نسخ الرابط",
+    shareTitle: "دعوة للانضمام",
+    shareText: "انضم إلينا عبر هذا الرابط!",
+    shareSuccess: "تم فتح المشاركة",
+    shareFailed: "فشل في المشاركة",
+    historyTitle: "سجل الدعوات",
+    historyDescription: "لقد قمت بدعوة {count} شخص",
+    noReferrals: "لم تقم بدعوة أي شخص بعد",
+    startInviting: "ابدأ بمشاركة رابط الدعوة الخاص بك",
+    invitedName: "الاسم",
+    invitedEmail: "البريد الإلكتروني",
+    invitedDate: "تاريخ التسجيل",
   },
 };
 
