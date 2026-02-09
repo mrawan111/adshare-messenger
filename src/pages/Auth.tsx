@@ -21,6 +21,7 @@ const signupSchema = z.object({
   fullName: z.string().min(2, t("auth.nameMin")),
   email: z.string().email(t("auth.invalidEmail")),
   phone: z.string().min(10, t("auth.phoneMin")),
+  vodafoneCash: z.string().min(10, t("auth.phoneMin")),
   password: z.string().min(6, t("auth.passwordMin")),
 });
 
@@ -41,6 +42,7 @@ export default function Auth() {
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPhone, setSignupPhone] = useState("");
+  const [signupVodafoneCash, setSignupVodafoneCash] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
 
   useEffect(() => {
@@ -97,6 +99,7 @@ export default function Auth() {
       fullName: signupName,
       email: signupEmail,
       phone: signupPhone,
+      vodafoneCash: signupVodafoneCash,
       password: signupPassword,
     });
     
@@ -117,6 +120,7 @@ export default function Auth() {
           data: {
             full_name: signupName,
             phone_number: signupPhone,
+            vodafone_cash: signupVodafoneCash,
             referral_code: referralCode || null,
           },
         },
@@ -266,6 +270,22 @@ export default function Auth() {
                       value={signupPhone}
                       onChange={(e) => setSignupPhone(e.target.value)}
                       placeholder={t("auth.phonePlaceholder")}
+                      className="ps-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-vodafone-cash">رقم محفظة للمكافأت</Label>
+                  <div className="relative">
+                    <Phone className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="signup-vodafone-cash"
+                      type="tel"
+                      value={signupVodafoneCash}
+                      onChange={(e) => setSignupVodafoneCash(e.target.value)}
+                      placeholder="010123456789"
                       className="ps-10"
                       required
                     />

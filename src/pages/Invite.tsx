@@ -104,12 +104,13 @@ export default function Invite() {
   };
 
   const shareLink = async () => {
+    const shareMessage = `${t("invite.shareText")}\n\n${referralLink}`;
+    
     if (navigator.share) {
       try {
         await navigator.share({
           title: t("invite.shareTitle"),
-          text: t("invite.shareText"),
-          url: referralLink,
+          text: shareMessage,
         });
         toast.success(t("invite.shareSuccess"));
       } catch (err) {
@@ -119,7 +120,15 @@ export default function Invite() {
         }
       }
     } else {
-      copyToClipboard();
+      // Fallback: copy the full message to clipboard
+      try {
+        await navigator.clipboard.writeText(shareMessage);
+        setCopied(true);
+        toast.success(t("invite.linkCopied"));
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        toast.error(t("invite.copyFailed"));
+      }
     }
   };
 
@@ -157,8 +166,24 @@ export default function Invite() {
               <Share2 className="h-5 w-5 text-primary" />
               {t("invite.yourLink")}
             </CardTitle>
-            <CardDescription>
-              {t("invite.linkDescription")}
+            <CardDescription className="text-base leading-relaxed">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">💰</span>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-gray-800 dark:text-gray-200 font-medium">
+                      يمكنك ترشيح أي شخص للعمل دليفري من خلال هذا الرابط،
+                    </p>
+                    <p className="text-green-600 dark:text-green-400 font-semibold text-lg">
+                      وعند إكماله شهر عمل كامل تحصل على بونص 1000 جنيه.
+                    </p>
+                    <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 font-medium">
+                    </div>
+                  </div>
+                </div>
+              </div>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

@@ -74,6 +74,7 @@ export type Database = {
           phone_number: string
           updated_at: string
           user_id: string
+          vodafone_cash: string | null
         }
         Insert: {
           created_at?: string
@@ -83,6 +84,7 @@ export type Database = {
           phone_number: string
           updated_at?: string
           user_id: string
+          vodafone_cash?: string | null
         }
         Update: {
           created_at?: string
@@ -92,6 +94,7 @@ export type Database = {
           phone_number?: string
           updated_at?: string
           user_id?: string
+          vodafone_cash?: string | null
         }
         Relationships: []
       }
