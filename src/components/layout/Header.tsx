@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, PlusCircle, MessageCircle, BarChart3, LogOut, User, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,7 +14,17 @@ import { t } from "@/i18n";
 
 export function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, isAdmin, signOut } = useAuth();
+
+  // Handle invite click for unauthenticated users
+  const handleInviteClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      sessionStorage.setItem("redirectAfterAuth", "/invite");
+      navigate("/auth");
+    }
+  };
 
   // Build nav items based on role
   const navItems = [
@@ -50,6 +60,7 @@ export function Header() {
               <Link
                 key={to}
                 to={to}
+                onClick={to === "/invite" ? handleInviteClick : undefined}
                 className={cn(
                   "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
                   location.pathname === to
