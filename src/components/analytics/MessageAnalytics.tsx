@@ -53,25 +53,25 @@ export function MessageAnalytics({ contacts, scheduledMessages }: MessageAnalyti
   const stats = useMemo((): MessageStats => {
     const completedMessages = scheduledMessages.filter(msg => msg.status === 'completed');
     const failedMessages = scheduledMessages.filter(msg => msg.status === 'cancelled');
-    
+
     const totalSent = completedMessages.reduce((sum, msg) => sum + (msg.processedCount || 0), 0);
     const totalFailed = failedMessages.reduce((sum, msg) => sum + (msg.totalCount || 0), 0);
     const totalDelivered = totalSent - totalFailed;
-    
+
     const successRate = totalSent > 0 ? (totalDelivered / totalSent) * 100 : 0;
-    
+
     // Calculate active contacts (contacts that received messages in the last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
+
     const activeContacts = contacts.filter(contact => {
       // This would be based on actual message history in a real implementation
       return Math.random() > 0.3; // Mock data
     }).length;
 
-    const messagesPerDay = timeRange === "7days" ? totalSent / 7 : 
-                          timeRange === "30days" ? totalSent / 30 : 
-                          totalSent / 90;
+    const messagesPerDay = timeRange === "7days" ? totalSent / 7 :
+      timeRange === "30days" ? totalSent / 30 :
+        totalSent / 90;
 
     return {
       totalSent,
@@ -89,11 +89,11 @@ export function MessageAnalytics({ contacts, scheduledMessages }: MessageAnalyti
   const dailyStats = useMemo((): DailyStats[] => {
     const days = timeRange === "7days" ? 7 : timeRange === "30days" ? 30 : 90;
     const stats: DailyStats[] = [];
-    
+
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      
+
       // Mock data - in real implementation, this would come from actual message history
       stats.push({
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -102,7 +102,7 @@ export function MessageAnalytics({ contacts, scheduledMessages }: MessageAnalyti
         failed: Math.floor(Math.random() * 5)
       });
     }
-    
+
     return stats;
   }, [timeRange]);
 
@@ -340,7 +340,8 @@ export function MessageAnalytics({ contacts, scheduledMessages }: MessageAnalyti
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
-            <div className="grid grid-cols-4 gap-4 p-4 font-medium border-b bg-muted/50">
+            {/* Desktop header - hidden on mobile */}
+            <div className="hidden sm:grid grid-cols-4 gap-4 p-4 font-medium border-b bg-muted/50">
               <div>Contact Name</div>
               <div>Last Message</div>
               <div>Message Count</div>
@@ -348,11 +349,22 @@ export function MessageAnalytics({ contacts, scheduledMessages }: MessageAnalyti
             </div>
             <div className="divide-y">
               {contactActivity.map((contact) => (
-                <div key={contact.contactId} className="grid grid-cols-4 gap-4 p-4">
-                  <div className="font-medium">{contact.contactName}</div>
-                  <div className="text-sm text-muted-foreground">{contact.lastMessageDate}</div>
-                  <div className="text-sm">{contact.messageCount}</div>
-                  <div>
+                <div key={contact.contactId} className="flex flex-col gap-2 p-4 sm:grid sm:grid-cols-4 sm:gap-4">
+                  {/* Mobile: show as labeled items, Desktop: grid columns */}
+                  <div className="flex justify-between sm:block">
+                    <span className="text-muted-foreground sm:hidden">Contact:</span>
+                    <span className="font-medium">{contact.contactName}</span>
+                  </div>
+                  <div className="flex justify-between sm:block">
+                    <span className="text-muted-foreground sm:hidden">Last Message:</span>
+                    <span className="text-sm text-muted-foreground sm:text-foreground">{contact.lastMessageDate}</span>
+                  </div>
+                  <div className="flex justify-between sm:block">
+                    <span className="text-muted-foreground sm:hidden">Messages:</span>
+                    <span className="text-sm">{contact.messageCount}</span>
+                  </div>
+                  <div className="flex justify-between items-center sm:block">
+                    <span className="text-muted-foreground sm:hidden">Status:</span>
                     <Badge variant={contact.status === 'active' ? 'default' : 'secondary'}>
                       {contact.status}
                     </Badge>

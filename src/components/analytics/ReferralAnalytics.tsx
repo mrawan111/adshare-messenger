@@ -106,7 +106,7 @@ export function ReferralAnalytics() {
     const totalReferrals = referrals.length;
     const usersWhoReferred = userStats.length;
     const topReferrer = userStats[0] || null;
-    
+
     // Calculate referrals this week
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
@@ -280,24 +280,24 @@ export function ReferralAnalytics() {
               {userStats.slice(0, 10).map((user, index) => (
                 <div
                   key={user.userId}
-                  className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                  className="flex flex-col gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold shrink-0">
                       {index + 1}
                     </div>
-                    <Avatar>
+                    <Avatar className="shrink-0">
                       <AvatarFallback className="bg-primary/20">
                         {getInitials(user.userName, user.userEmail)}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="font-medium">{user.userName || 'مستخدم'}</p>
-                      <p className="text-sm text-muted-foreground">{user.userEmail}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{user.userName || 'مستخدم'}</p>
+                      <p className="text-sm text-muted-foreground truncate">{user.userEmail}</p>
                     </div>
                   </div>
-                  <div className="text-left">
-                    <Badge variant={index < 3 ? "default" : "secondary"} className="text-lg px-3 py-1">
+                  <div className="text-left self-end sm:self-auto">
+                    <Badge variant={index < 3 ? "default" : "secondary"} className="text-base sm:text-lg px-3 py-1">
                       {user.referralCount} دعوة
                     </Badge>
                   </div>
@@ -319,64 +319,106 @@ export function ReferralAnalytics() {
               لا توجد دعوات بعد
             </p>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="p-4 text-right font-medium">الداعي</th>
-                    <th className="p-4 text-right font-medium">المدعو</th>
-                    <th className="p-4 text-right font-medium">تاريخ الدعوة</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {referrals.map((ref) => (
-                    <tr key={ref.id} className="border-b hover:bg-muted/30 transition-colors">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">
-                              {getInitials(ref.inviter_name, ref.inviter_email)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium text-sm">{ref.inviter_name || 'مستخدم'}</p>
-                            <p className="text-xs text-muted-foreground">{ref.inviter_email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs bg-primary/20 text-primary">
-                              {getInitials(ref.invited_name, ref.invited_email)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium text-sm">{ref.invited_name || 'مستخدم'}</p>
-                            <p className="text-xs text-muted-foreground">{ref.invited_email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <p className="text-sm">
-                          {new Date(ref.invited_at).toLocaleDateString('ar-EG', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                          })}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(ref.invited_at).toLocaleTimeString('ar-EG', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
-                      </td>
+            <>
+              {/* Mobile: Card layout */}
+              <div className="space-y-3 sm:hidden">
+                {referrals.map((ref) => (
+                  <div key={ref.id} className="rounded-lg border p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-muted-foreground text-sm shrink-0">الداعي:</span>
+                      <Avatar className="h-6 w-6 shrink-0">
+                        <AvatarFallback className="text-xs">
+                          {getInitials(ref.inviter_name, ref.inviter_email)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{ref.inviter_name || 'مستخدم'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-muted-foreground text-sm shrink-0">المدعو:</span>
+                      <Avatar className="h-6 w-6 shrink-0">
+                        <AvatarFallback className="text-xs bg-primary/20 text-primary">
+                          {getInitials(ref.invited_name, ref.invited_email)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{ref.invited_name || 'مستخدم'}</p>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="text-muted-foreground text-sm">التاريخ:</span>
+                      <p className="text-sm">
+                        {new Date(ref.invited_at).toLocaleDateString('ar-EG', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Desktop table */}
+              <div className="hidden sm:block rounded-md border overflow-x-auto">
+                <table className="w-full min-w-[600px]">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="p-4 text-right font-medium">الداعي</th>
+                      <th className="p-4 text-right font-medium">المدعو</th>
+                      <th className="p-4 text-right font-medium">تاريخ الدعوة</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {referrals.map((ref) => (
+                      <tr key={ref.id} className="border-b hover:bg-muted/30 transition-colors">
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8 shrink-0">
+                              <AvatarFallback className="text-xs">
+                                {getInitials(ref.inviter_name, ref.inviter_email)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm truncate">{ref.inviter_name || 'مستخدم'}</p>
+                              <p className="text-xs text-muted-foreground truncate">{ref.inviter_email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8 shrink-0">
+                              <AvatarFallback className="text-xs bg-primary/20 text-primary">
+                                {getInitials(ref.invited_name, ref.invited_email)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm truncate">{ref.invited_name || 'مستخدم'}</p>
+                              <p className="text-xs text-muted-foreground truncate">{ref.invited_email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <p className="text-sm">
+                            {new Date(ref.invited_at).toLocaleDateString('ar-EG', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(ref.invited_at).toLocaleTimeString('ar-EG', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </p>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
