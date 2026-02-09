@@ -7,7 +7,7 @@ export const translations: Record<string, Translations> = {
 
 export const defaultLanguage = "ar";
 
-export function t(key: string, params?: Record<string, string | number>): string {
+export function t(key: string, params?: Record<string, string | number | boolean>): string {
   const lang = translations[defaultLanguage];
   const keys = key.split(".");
   
@@ -18,6 +18,11 @@ export function t(key: string, params?: Record<string, string | number>): string
     } else {
       return key; // Return key if not found
     }
+  }
+
+  // Handle returnObjects flag for arrays
+  if (params?.returnObjects === true && Array.isArray(value)) {
+    return value.join('\n');
   }
 
   if (typeof value !== "string") return key;
@@ -32,4 +37,24 @@ export function t(key: string, params?: Record<string, string | number>): string
   }
 
   return value;
+}
+
+export function tArray(key: string): string[] {
+  const lang = translations[defaultLanguage];
+  const keys = key.split(".");
+  
+  let value: unknown = lang;
+  for (const k of keys) {
+    if (value && typeof value === "object" && k in value) {
+      value = (value as Record<string, unknown>)[k];
+    } else {
+      return [key]; // Return key if not found
+    }
+  }
+
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  return [String(value)];
 }

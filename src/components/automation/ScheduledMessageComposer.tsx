@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { t, tArray } from "@/i18n";
 import * as XLSX from 'xlsx';
 
 interface Contact {
@@ -242,7 +243,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
       if (!automationRef.current) break;
 
       while (isPaused && automationRef.current) {
-        setCurrentStatus("Paused - Click Resume to continue");
+        setCurrentStatus(t("whatsapp.pausedClickResume"));
         await sleep(1000);
       }
 
@@ -254,7 +255,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
       const batchContacts = scheduledMsg.selectedContacts.slice(startIndex, endIndex);
 
       setCurrentBatch(batchIndex + 1);
-      setCurrentStatus(`Processing batch ${batchIndex + 1}`);
+      setCurrentStatus(t("whatsapp.processingBatch", { batchNumber: batchIndex + 1 }));
 
       for (let i = 0; i < batch.length; i++) {
         if (!automationRef.current) break;
@@ -269,7 +270,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
         const contact = batchContacts[i];
         const personalizedMsg = personalizeMessage(scheduledMsg.message, contact, templateVariables);
         
-        setCurrentStatus(`Opening chat for ${contact.name}...`);
+        setCurrentStatus(t("whatsapp.openingChatFor", { name: contact.name }));
 
         const success = await openWhatsAppChatWithCheck(phoneNumber, personalizedMsg);
         if (success) {
@@ -287,7 +288,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
       }
 
       if (batchIndex < Math.ceil(numbers.length / BATCH_SIZE) - 1 && automationRef.current) {
-        setCurrentStatus(`Batch ${batchIndex + 1} completed. Waiting 5 minutes...`);
+        setCurrentStatus(t("whatsapp.batchCompleted", { batchNumber: batchIndex + 1 }));
         
         let remainingDelay = DELAY_BETWEEN_BATCHES / 1000;
         setCountdown(remainingDelay);
@@ -324,11 +325,11 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
     ));
 
     if (automationRef.current) {
-      setCurrentStatus("Campaign completed!");
-      toast.success(`Scheduled campaign completed! ${successCount} chats opened${failCount > 0 ? ` (${failCount} failed)` : ''}`);
+      toast.success(t("whatsapp.campaignCompleted", { successCount, failCount }));
+      setCurrentStatus(t("whatsapp.campaignCompleted", { successCount, failCount }));
     } else {
-      setCurrentStatus("Campaign stopped");
-      toast.info("Campaign stopped by user");
+      setCurrentStatus(t("whatsapp.campaignStopped"));
+      toast.info(t("whatsapp.campaignStopped"));
     }
 
     setIsSending(false);
@@ -360,17 +361,17 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
 
   const handleScheduleMessage = () => {
     if (!message.trim()) {
-      toast.error("Please enter a message");
+      toast.error(t("whatsapp.pleaseEnterMessage"));
       return;
     }
 
     if (!scheduledTime) {
-      toast.error("Please select a scheduled time");
+      toast.error(t("whatsapp.selectScheduledTime"));
       return;
     }
 
     if (selectedContacts.length === 0) {
-      toast.error("Please select at least one contact");
+      toast.error(t("whatsapp.selectAtLeastOneContact"));
       return;
     }
 
@@ -378,7 +379,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
     const now = new Date();
 
     if (scheduledDate <= now) {
-      toast.error("Scheduled time must be in the future");
+      toast.error(t("whatsapp.scheduledTimeFuture"));
       return;
     }
 
@@ -392,7 +393,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
     };
 
     setScheduledMessages(prev => [...prev, newScheduledMessage]);
-    toast.success(`Message scheduled for ${scheduledDate.toLocaleString()}`);
+    toast.success(t("whatsapp.messageScheduledFor", { time: scheduledDate.toLocaleString() }));
     
     // Reset form
     setMessage("");
@@ -420,12 +421,12 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
     setScheduledMessages(prev => prev.map(msg => 
       msg.id === id ? { ...msg, status: 'cancelled' } : msg
     ));
-    toast.success("Scheduled message cancelled");
+    toast.success(t("whatsapp.scheduledMessageCancelled"));
   };
 
   const handleDeleteScheduled = (id: string) => {
     setScheduledMessages(prev => prev.filter(msg => msg.id !== id));
-    toast.success("Scheduled message deleted");
+    toast.success(t("whatsapp.scheduledMessageDeleted"));
   };
 
   const progressPercentage = totalNumbers > 0 ? (processedNumbers / totalNumbers) * 100 : 0;
@@ -445,10 +446,10 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
       const filename = `whatsapp_contacts_${timestamp}.xlsx`;
 
       XLSX.writeFile(wb, filename);
-      toast.success(`Excel file exported: ${filename}`);
+      toast.success(t("whatsapp.excelFileExported", { filename }));
     } catch (error) {
       console.error('Error exporting Excel:', error);
-      toast.error('Failed to export Excel file');
+      toast.error(t("whatsapp.failedToExportExcel"));
     }
   };
 
@@ -458,13 +459,13 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg font-display">
             <MessageCircle className="h-5 w-5 text-whatsapp" />
-            Advanced WhatsApp Automation
+            {t("whatsapp.advancedAutomation")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-1">
-              <TabsTrigger value="immediate">Immediate</TabsTrigger>
+              <TabsTrigger value="immediate">{t("whatsapp.immediate")}</TabsTrigger>
               {/* <TabsTrigger value="scheduled">Scheduled</TabsTrigger> */}
               {/* <TabsTrigger value="templates">Templates</TabsTrigger> */}
             </TabsList>
@@ -476,24 +477,23 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
                     <div className="text-sm text-amber-800">
-                      <p className="font-medium mb-1">⚠️ Important - Read Before Starting:</p>
+                      <p className="font-medium mb-1">{t("whatsapp.importantRead")}</p>
                       <ul className="text-xs space-y-1">
-                        <li>• Allow popups for this site in your browser settings</li>
-                        <li>• Each WhatsApp chat will open in a new tab automatically</li>
-                        <li>• You must manually press "Send" in each WhatsApp chat</li>
-                        <li>• Processing: 25 numbers per batch with 5-minute delays</li>
+                        {tArray("whatsapp.importantInstructions").map((instruction: string, index: number) => (
+                          <li key={index}>{instruction}</li>
+                        ))}
                       </ul>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="message">Message</Label>
+                  <Label htmlFor="message">{t("whatsapp.message")}</Label>
                   <Textarea
                     id="message"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Type your message here..."
+                    placeholder={t("whatsapp.messagePlaceholder")}
                     rows={5}
                     className="resize-none"
                     disabled={isSending}
@@ -509,7 +509,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
                       className="flex-1"
                     >
                       <Download className="mr-2 h-4 w-4" />
-                      Export to Excel
+                      {t("whatsapp.exportToExcel")}
                     </Button>
                     <Button
                       onClick={() => {
@@ -524,7 +524,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
                       className="flex-1"
                     >
                       <ExternalLink className="mr-2 h-4 w-4" />
-                      Open WhatsApp
+                      {t("whatsapp.openWhatsApp")}
                     </Button>
                   </div>
 
@@ -534,7 +534,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
                     className="gradient-whatsapp text-whatsapp-foreground"
                   >
                     <Send className="mr-2 h-4 w-4" />
-                    Start Automated Sending
+                    {t("whatsapp.startAutomatedSending")}
                   </Button>
                 </div>
               </div>
@@ -737,21 +737,21 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
             <div className="space-y-3 rounded-lg bg-muted/30 p-4 border">
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Progress</span>
+                  <span className="text-sm font-medium">{t("whatsapp.progress")}</span>
                   <span className="text-sm text-muted-foreground">
-                    {processedNumbers} / {totalNumbers} numbers
+                    {processedNumbers} / {totalNumbers} {t("whatsapp.numbers")}
                   </span>
                 </div>
                 <Progress value={progressPercentage} className="h-2" />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Batch {currentBatch} of {totalBatches}</span>
-                  <span>{progressPercentage.toFixed(1)}% complete</span>
+                  <span>{t("whatsapp.batch")} {currentBatch} {t("whatsapp.of")} {totalBatches}</span>
+                  <span>{progressPercentage.toFixed(1)}% {t("whatsapp.complete")}</span>
                 </div>
               </div>
 
               {currentStatus && (
                 <div className="text-sm">
-                  <p className="font-medium text-foreground">Status:</p>
+                  <p className="font-medium text-foreground">{t("whatsapp.status")}:</p>
                   <p className="text-muted-foreground">{currentStatus}</p>
                 </div>
               )}
@@ -761,7 +761,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
                   <div className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2">
                     <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
                     <span className="font-mono text-sm font-medium text-primary">
-                      Next batch in: {formatCountdown(countdown)}
+                      {t("whatsapp.nextBatchIn")} {formatCountdown(countdown)}
                     </span>
                   </div>
                 </div>
@@ -775,12 +775,12 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
               {!isPaused ? (
                 <Button onClick={() => setIsPaused(true)} variant="outline" className="flex-1">
                   <Pause className="mr-2 h-4 w-4" />
-                  Pause
+                  {t("whatsapp.pause")}
                 </Button>
               ) : (
                 <Button onClick={() => setIsPaused(false)} variant="outline" className="flex-1">
                   <Play className="mr-2 h-4 w-4" />
-                  Resume
+                  {t("whatsapp.resume")}
                 </Button>
               )}
               <Button
@@ -792,7 +792,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
                 className="flex-1"
               >
                 <Square className="mr-2 h-4 w-4" />
-                Stop Campaign
+                {t("whatsapp.stopCampaign")}
               </Button>
             </div>
           )}
@@ -803,23 +803,23 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
       <AlertDialog open={showStartDialog} onOpenChange={setShowStartDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Start Automated WhatsApp Campaign?</AlertDialogTitle>
+            <AlertDialogTitle>{t("whatsapp.startAutomatedCampaign")}</AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <p>This will automatically open WhatsApp chats for <strong>{selectedCount}</strong> contacts in batches of <strong>25</strong>.</p>
+              <p>{t("whatsapp.campaignDescription", { selectedCount, batchSize: 25 })}</p>
               <div className="rounded-lg bg-muted p-3 text-sm">
-                <p className="font-medium mb-2">Campaign Details:</p>
+                <p className="font-medium mb-2">{t("whatsapp.campaignDetails")}</p>
                 <ul className="text-xs space-y-1">
-                  <li>• Total batches: {totalBatches}</li>
-                  <li>• Delay between chats: 1.5 seconds</li>
-                  <li>• Delay between batches: 5 minutes</li>
-                  <li>• Estimated time: ~{Math.ceil((totalBatches - 1) * 5 + (totalNumbers * 1.5) / 60)} minutes</li>
+                  <li>• {t("whatsapp.totalBatches")}: {totalBatches}</li>
+                  <li>• {t("whatsapp.delayBetweenChats")}: 1.5 {t("whatsapp.seconds")}</li>
+                  <li>• {t("whatsapp.delayBetweenBatches")}: 5 {t("whatsapp.minutes")}</li>
+                  <li>• {t("whatsapp.estimatedTime")}: ~{Math.ceil((totalBatches - 1) * 5 + (totalNumbers * 1.5) / 60)} {t("whatsapp.minutes")}</li>
                 </ul>
               </div>
-              <p className="text-amber-600 font-medium">⚠️ You must manually send each message in WhatsApp.</p>
+              <p className="text-amber-600 font-medium">{t("whatsapp.manualSendWarning")}</p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("whatsapp.cancel")}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={() => {
                 setShowStartDialog(false);

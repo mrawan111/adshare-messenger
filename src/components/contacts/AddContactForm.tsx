@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { t } from "@/i18n";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,36 +29,36 @@ export function AddContactForm({ onAdd }: AddContactFormProps) {
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-lg font-display">
           <UserPlus className="h-5 w-5 text-primary" />
-          Add Contact
+          {t("whatsapp.addContactTitle")}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">{t("whatsapp.name")}</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="John Doe"
+                placeholder={t("whatsapp.namePlaceholder")}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">{t("whatsapp.phoneNumber")}</Label>
               <Input
                 id="phone"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="+1234567890"
+                placeholder={t("whatsapp.phonePlaceholder")}
                 required
               />
             </div>
           </div>
           <Button type="submit" className="w-full sm:w-auto gradient-primary">
             <UserPlus className="mr-2 h-4 w-4" />
-            Add Contact
+            {t("whatsapp.addContact")}
           </Button>
         </form>
       </CardContent>

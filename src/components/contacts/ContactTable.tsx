@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+import { t } from "@/i18n";
 import { Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -55,10 +57,10 @@ export function ContactTable({
           </svg>
         </div>
         <h3 className="mb-1 font-display text-base font-semibold text-foreground">
-          No contacts yet
+          {t("whatsapp.noContactsYet")}
         </h3>
         <p className="text-sm text-muted-foreground">
-          Add contacts to send WhatsApp messages
+          {t("whatsapp.addContactsToMessage")}
         </p>
       </div>
     );
@@ -74,7 +76,7 @@ export function ContactTable({
           disabled={allSelected}
           className="text-xs"
         >
-          Select All
+          {t("whatsapp.selectAll")}
         </Button>
         <Button
           variant="outline"
@@ -83,11 +85,11 @@ export function ContactTable({
           disabled={selectedIds.size === 0}
           className="text-xs"
         >
-          Deselect All
+          {t("whatsapp.deselectAll")}
         </Button>
         {selectedIds.size > 0 && (
           <span className="ml-2 text-sm text-muted-foreground">
-            {selectedIds.size} selected
+            {selectedIds.size} {t("whatsapp.selected")}
           </span>
         )}
       </div>
@@ -113,8 +115,8 @@ export function ContactTable({
                   }}
                 />
               </TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Phone Number</TableHead>
+              <TableHead>{t("whatsapp.name")}</TableHead>
+              <TableHead>{t("whatsapp.phoneNumber")}</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>

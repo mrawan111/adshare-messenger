@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { t } from "@/i18n";
 import * as XLSX from 'xlsx';
 
 interface Contact {
@@ -49,7 +50,7 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
       ];
       
       if (!validTypes.includes(selectedFile.type)) {
-        toast.error("Please select a valid Excel file (.xlsx, .xls) or CSV file");
+        toast.error(t("whatsapp.validFileError"));
         return;
       }
 
@@ -127,19 +128,19 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
           setShowPreview(true);
           
           if (processedContacts.length === 0) {
-            toast.error("No valid contacts found in the file");
+            toast.error(t("whatsapp.noValidContacts"));
           } else {
-            toast.success(`Found ${processedContacts.length} valid contacts`);
+            toast.success(t("whatsapp.foundValidContacts", { count: processedContacts.length }));
           }
         } catch (error) {
-          toast.error("Error processing Excel file");
+          toast.error(t("whatsapp.processingError"));
           console.error(error);
         }
       };
       
       reader.readAsArrayBuffer(file);
     } catch (error) {
-      toast.error("Error reading file");
+      toast.error(t("whatsapp.readingError"));
       console.error(error);
     } finally {
       setIsProcessing(false);
@@ -179,25 +180,25 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileSpreadsheet className="h-5 w-5" />
-          Import Contacts from Excel
+          {t("whatsapp.importFromExcel")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Download Template */}
         <div className="flex items-center justify-between p-3 border rounded-lg bg-blue-50">
           <div>
-            <p className="font-medium text-blue-800">Need a template?</p>
-            <p className="text-sm text-blue-600">Download sample Excel file</p>
+            <p className="font-medium text-blue-800">{t("whatsapp.needTemplate")}</p>
+            <p className="text-sm text-blue-600">{t("whatsapp.downloadSample")}</p>
           </div>
           <Button variant="outline" size="sm" onClick={downloadSampleTemplate}>
             <Download className="mr-2 h-4 w-4" />
-            Download Template
+            {t("whatsapp.downloadTemplate")}
           </Button>
         </div>
 
         {/* File Upload */}
         <div className="space-y-2">
-          <Label htmlFor="excel-file">Select Excel File</Label>
+          <Label htmlFor="excel-file">{t("whatsapp.selectExcelFile")}</Label>
           <Input
             id="excel-file"
             type="file"
@@ -225,7 +226,7 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
         {isProcessing && (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Processing file...</span>
+              <span>{t("whatsapp.processingFile")}</span>
               <span>{importProgress}%</span>
             </div>
             <Progress value={importProgress} />
@@ -240,7 +241,7 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
             className="w-full"
           >
             <Upload className="mr-2 h-4 w-4" />
-            {isProcessing ? 'Processing...' : 'Process File'}
+            {isProcessing ? t("whatsapp.processingFile") : t("whatsapp.processFile")}
           </Button>
         )}
 
@@ -248,15 +249,15 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
         {showPreview && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium">Preview Contacts</h3>
+              <h3 className="font-medium">{t("whatsapp.previewContacts")}</h3>
               <Badge variant="outline">{previewData.length} contacts</Badge>
             </div>
             
             {/* Preview Table */}
             <div className="border rounded-lg overflow-hidden">
               <div className="grid grid-cols-2 bg-gray-50 p-2 text-sm font-medium">
-                <div>Name</div>
-                <div>Phone Number</div>
+                <div>{t("whatsapp.name")}</div>
+                <div>{t("whatsapp.phoneNumber")}</div>
               </div>
               <div className="max-h-60 overflow-y-auto">
                 {previewData.map((contact, index) => (
@@ -271,7 +272,7 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
             {/* Errors */}
             {errors.length > 0 && (
               <div className="space-y-2">
-                <h4 className="font-medium text-amber-800">Import Warnings:</h4>
+                <h4 className="font-medium text-amber-800">{t("whatsapp.importWarnings")}</h4>
                 <div className="max-h-32 overflow-y-auto space-y-1">
                   {errors.map((error, index) => (
                     <div key={index} className="flex items-start gap-2 text-sm text-amber-700">
@@ -287,10 +288,10 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
             <div className="flex gap-2">
               <Button onClick={confirmImport} className="flex-1">
                 <CheckCircle className="mr-2 h-4 w-4" />
-                Import {previewData.length} Contacts
+                {t("whatsapp.importContacts", { count: previewData.length })}
               </Button>
               <Button variant="outline" onClick={resetForm}>
-                Cancel
+                {t("whatsapp.cancel")}
               </Button>
             </div>
           </div>

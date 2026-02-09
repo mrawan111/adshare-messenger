@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { t } from "@/i18n";
 
 interface Contact {
   id: string;
@@ -82,12 +83,12 @@ export function ContactGroups({ contacts, selectedIds, onSelectionChange }: Cont
   // Create new group
   const handleCreateGroup = () => {
     if (!newGroupName.trim()) {
-      toast.error("Please enter a group name");
+      toast.error(t("whatsapp.enterGroupName"));
       return;
     }
 
     if (selectedContactsForGroup.size === 0) {
-      toast.error("Please select at least one contact for the group");
+      toast.error(t("whatsapp.selectContactsForGroupError"));
       return;
     }
 
@@ -107,13 +108,13 @@ export function ContactGroups({ contacts, selectedIds, onSelectionChange }: Cont
     setSelectedContactsForGroup(new Set());
     setShowCreateDialog(false);
     
-    toast.success(`Group "${newGroup.name}" created successfully`);
+    toast.success(t("whatsapp.groupCreatedSuccess", { name: newGroup.name }));
   };
 
   // Update existing group
   const handleUpdateGroup = () => {
     if (!editingGroup || !newGroupName.trim()) {
-      toast.error("Please enter a group name");
+      toast.error(t("whatsapp.enterGroupName"));
       return;
     }
 
@@ -137,7 +138,7 @@ export function ContactGroups({ contacts, selectedIds, onSelectionChange }: Cont
     setEditingGroup(null);
     setShowEditDialog(false);
     
-    toast.success(`Group "${newGroupName}" updated successfully`);
+    toast.success(t("whatsapp.groupUpdatedSuccess", { name: newGroupName }));
   };
 
   // Delete group
@@ -145,9 +146,9 @@ export function ContactGroups({ contacts, selectedIds, onSelectionChange }: Cont
     const group = groups.find(g => g.id === groupId);
     if (!group) return;
 
-    if (confirm(`Are you sure you want to delete the group "${group.name}"?`)) {
+    if (confirm(t("whatsapp.deleteGroupConfirm", { name: group.name }))) {
       saveGroups(groups.filter(g => g.id !== groupId));
-      toast.success(`Group "${group.name}" deleted`);
+      toast.success(t("whatsapp.groupDeleted", { name: group.name }));
     }
   };
 
@@ -190,19 +191,19 @@ export function ContactGroups({ contacts, selectedIds, onSelectionChange }: Cont
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-lg font-display">
           <Users className="h-5 w-5 text-primary" />
-          Contact Groups
+          {t("whatsapp.contactGroups")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Group Filter */}
         <div className="space-y-2">
-          <Label>Filter by Group</Label>
+          <Label>{t("whatsapp.filterByGroup")}</Label>
           <Select value={selectedGroupFilter} onValueChange={setSelectedGroupFilter}>
             <SelectTrigger>
-              <SelectValue placeholder="Select a group" />
+              <SelectValue placeholder={t("whatsapp.selectGroup")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Contacts ({contacts.length})</SelectItem>
+              <SelectItem value="all">{t("whatsapp.allContacts", { count: contacts.length })}</SelectItem>
               {groups.map((group) => (
                 <SelectItem key={group.id} value={group.id}>
                   {group.name} ({group.contact_ids.length})
@@ -215,7 +216,7 @@ export function ContactGroups({ contacts, selectedIds, onSelectionChange }: Cont
         {/* Groups List */}
         {groups.length > 0 && (
           <div className="space-y-3">
-            <h3 className="font-medium">Your Groups</h3>
+            <h3 className="font-medium">{t("whatsapp.yourGroups")}</h3>
             <div className="space-y-2">
               {groups.map((group) => {
                 const groupContacts = getGroupContacts(group.id);
@@ -225,7 +226,7 @@ export function ContactGroups({ contacts, selectedIds, onSelectionChange }: Cont
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-medium">{group.name}</h4>
-                          <Badge variant="secondary">{groupContacts.length} contacts</Badge>
+                          <Badge variant="secondary">{groupContacts.length} {t("whatsapp.contacts")}</Badge>
                         </div>
                         {group.description && (
                           <p className="text-sm text-muted-foreground mb-2">
@@ -240,7 +241,7 @@ export function ContactGroups({ contacts, selectedIds, onSelectionChange }: Cont
                           ))}
                           {groupContacts.length > 3 && (
                             <Badge variant="outline" className="text-xs">
-                              +{groupContacts.length - 3} more
+                              +{groupContacts.length - 3} {t("whatsapp.more", { count: groupContacts.length - 3 })}
                             </Badge>
                           )}
                         </div>
@@ -251,7 +252,7 @@ export function ContactGroups({ contacts, selectedIds, onSelectionChange }: Cont
                           variant="outline"
                           onClick={() => handleSelectGroup(group.id)}
                         >
-                          Select All
+                          {t("whatsapp.selectAll")}
                         </Button>
                         <Button
                           size="sm"
@@ -282,37 +283,37 @@ export function ContactGroups({ contacts, selectedIds, onSelectionChange }: Cont
           <DialogTrigger asChild>
             <Button className="w-full">
               <Plus className="mr-2 h-4 w-4" />
-              Create New Group
+              {t("whatsapp.createNewGroup")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Create Contact Group</DialogTitle>
+              <DialogTitle>{t("whatsapp.createContactGroup")}</DialogTitle>
               <DialogDescription>
-                Create a group to organize your contacts for targeted messaging.
+                {t("whatsapp.createGroupDescription")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="group-name">Group Name</Label>
+                <Label htmlFor="group-name">{t("whatsapp.groupName")}</Label>
                 <Input
                   id="group-name"
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
-                  placeholder="e.g., VIP Customers, Newsletter Subscribers"
+                  placeholder={t("whatsapp.groupNamePlaceholder")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="group-description">Description (Optional)</Label>
+                <Label htmlFor="group-description">{t("whatsapp.groupDescription")}</Label>
                 <Input
                   id="group-description"
                   value={newGroupDescription}
                   onChange={(e) => setNewGroupDescription(e.target.value)}
-                  placeholder="Brief description of this group"
+                  placeholder={t("whatsapp.groupDescriptionPlaceholder")}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Select Contacts</Label>
+                <Label>{t("whatsapp.selectContactsForGroup")}</Label>
                 <div className="max-h-60 overflow-y-auto rounded-lg border p-3">
                   <div className="space-y-2">
                     {contacts.map((contact) => (
@@ -333,16 +334,16 @@ export function ContactGroups({ contacts, selectedIds, onSelectionChange }: Cont
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {selectedContactsForGroup.size} contact{selectedContactsForGroup.size !== 1 ? 's' : ''} selected
+                  {selectedContactsForGroup.size} {t("whatsapp.contactsSelected", { count: selectedContactsForGroup.size })}
                 </p>
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                Cancel
+                {t("whatsapp.cancel")}
               </Button>
               <Button onClick={handleCreateGroup}>
-                Create Group
+                {t("whatsapp.createGroup")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -352,32 +353,32 @@ export function ContactGroups({ contacts, selectedIds, onSelectionChange }: Cont
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Edit Contact Group</DialogTitle>
+              <DialogTitle>{t("whatsapp.editGroup")}</DialogTitle>
               <DialogDescription>
-                Update the group details and member contacts.
+                {t("whatsapp.updateGroupDescription")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-group-name">Group Name</Label>
+                <Label htmlFor="edit-group-name">{t("whatsapp.groupName")}</Label>
                 <Input
                   id="edit-group-name"
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
-                  placeholder="e.g., VIP Customers, Newsletter Subscribers"
+                  placeholder={t("whatsapp.groupNamePlaceholder")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-group-description">Description (Optional)</Label>
+                <Label htmlFor="edit-group-description">{t("whatsapp.groupDescription")}</Label>
                 <Input
                   id="edit-group-description"
                   value={newGroupDescription}
                   onChange={(e) => setNewGroupDescription(e.target.value)}
-                  placeholder="Brief description of this group"
+                  placeholder={t("whatsapp.groupDescriptionPlaceholder")}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Select Contacts</Label>
+                <Label>{t("whatsapp.selectContactsForGroup")}</Label>
                 <div className="max-h-60 overflow-y-auto rounded-lg border p-3">
                   <div className="space-y-2">
                     {contacts.map((contact) => (
@@ -398,16 +399,16 @@ export function ContactGroups({ contacts, selectedIds, onSelectionChange }: Cont
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {selectedContactsForGroup.size} contact{selectedContactsForGroup.size !== 1 ? 's' : ''} selected
+                  {selectedContactsForGroup.size} {t("whatsapp.contactsSelected", { count: selectedContactsForGroup.size })}
                 </p>
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-                Cancel
+                {t("whatsapp.cancel")}
               </Button>
               <Button onClick={handleUpdateGroup}>
-                Update Group
+                {t("whatsapp.updateGroup")}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -12,6 +12,7 @@ import { ScheduledMessageComposer } from "@/components/automation/ScheduledMessa
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { t } from "@/i18n";
 
 export default function WhatsApp() {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ export default function WhatsApp() {
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
-      toast.error("Access denied. Admins only.");
+      toast.error(t("whatsapp.accessDenied"));
       navigate("/");
     }
   }, [isAdmin, authLoading, navigate]);
@@ -50,10 +51,10 @@ export default function WhatsApp() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
-      toast.success("Contact added successfully");
+      toast.success(t("whatsapp.contactAdded"));
     },
     onError: () => {
-      toast.error("Failed to add contact");
+      toast.error(t("whatsapp.contactAddFailed"));
     },
   });
 
@@ -64,10 +65,10 @@ export default function WhatsApp() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
       setSelectedIds(new Set());
-      toast.success("Contact deleted successfully");
+      toast.success(t("whatsapp.contactDeleted"));
     },
     onError: (error) => {
-      toast.error("Error deleting contact: " + error.message);
+      toast.error(t("whatsapp.contactDeleteFailed") + ": " + error.message);
     },
   });
 
@@ -122,14 +123,14 @@ export default function WhatsApp() {
       console.log(`Import success: ${successCount} new, ${duplicateCount} duplicates`);
       
       if (successCount > 0) {
-        toast.success(`Successfully imported ${successCount} contacts${duplicateCount > 0 ? ` (${duplicateCount} duplicates skipped)` : ''}`);
+        toast.success(t("whatsapp.importSuccess", { count: successCount, duplicateCount }));
       } else {
-        toast.warning("No new contacts were imported (all may be duplicates)");
+        toast.warning(t("whatsapp.importWarning"));
       }
     },
     onError: (error) => {
       console.error('Import error:', error);
-      toast.error("Error importing contacts: " + error.message);
+      toast.error(t("whatsapp.importError") + ": " + error.message);
     },
   });
 
@@ -181,10 +182,10 @@ export default function WhatsApp() {
     <Layout>
       <div className="mb-8">
         <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl">
-          WhatsApp Messaging
+          {t("whatsapp.messaging")}
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Send messages to multiple contacts via WhatsApp Web
+          {t("whatsapp.messagingSubtitle")}
         </p>
       </div>
 
