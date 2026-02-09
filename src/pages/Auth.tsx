@@ -110,6 +110,24 @@ export default function Auth() {
 
     setIsSubmitting(true);
     try {
+      // Check if email already exists before attempting signup
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', signupEmail)
+        .limit(1);
+
+      if (checkError) {
+        console.error("Error checking email:", checkError);
+        toast.error(t("auth.unexpectedError"));
+        return;
+      }
+
+      if (existingUsers && existingUsers.length > 0) {
+        toast.error(t("auth.emailExists"));
+        return;
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
@@ -127,7 +145,7 @@ export default function Auth() {
       });
 
       if (error) {
-        if (error.message.includes("already registered")) {
+        if (error.message.includes("already registered") || error.message.includes("User already registered")) {
           toast.error(t("auth.emailExists"));
         } else {
           toast.error(error.message);

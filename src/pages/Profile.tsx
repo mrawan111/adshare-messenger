@@ -1,18 +1,28 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Mail, Phone, Wallet, Users, Calendar, ArrowLeft } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { User, Mail, Phone, Wallet, Users, Calendar, ArrowLeft, Edit2, Save, X } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import { t } from "@/i18n";
 
 export default function Profile() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: "",
+    phone_number: "",
+    vodafone_cash: "",
+  });
+  const queryClient = useQueryClient();
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -65,6 +75,60 @@ export default function Profile() {
     enabled: !!user,
   });
 
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (updateData: typeof formData) => {
+      if (!user) throw new Error("User not authenticated");
+      
+      const { error } = await supabase
+        .from("profiles")
+        .update(updateData)
+        .eq("user_id", user.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("تم تحديث البيانات بنجاح");
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
+    },
+    onError: (error) => {
+      console.error("Error updating profile:", error);
+      toast.error("فشل في تحديث البيانات");
+    },
+  });
+
+  // Initialize form data when profile loads
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        full_name: profile.full_name || "",
+        phone_number: profile.phone_number || "",
+        vodafone_cash: profile.vodafone_cash || user.user_metadata?.vodafone_cash || "",
+      });
+    }
+  }, [profile, user]);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Reset form data to original values
+    if (profile) {
+      setFormData({
+        full_name: profile.full_name || "",
+        phone_number: profile.phone_number || "",
+        vodafone_cash: profile.vodafone_cash || user.user_metadata?.vodafone_cash || "",
+      });
+    }
+  };
+
+  const handleSave = () => {
+    updateProfileMutation.mutate(formData);
+  };
+
   if (authLoading) {
     return (
       <Layout>
@@ -80,6 +144,22 @@ export default function Profile() {
   }
 
   const referralCount = referrals.length;
+
+  // Calculate days since registration
+  const daysSinceRegistration = user ? (() => {
+    const registrationDate = new Date(user.created_at);
+    const currentDate = new Date();
+    const diffTime = currentDate.getTime() - registrationDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Debug logging (remove in production)
+    console.log('Registration date:', registrationDate);
+    console.log('Current date:', currentDate);
+    console.log('Time difference (ms):', diffTime);
+    console.log('Days calculated:', diffDays);
+    
+    return diffDays;
+  })() : 0;
 
   return (
     <Layout>
@@ -107,10 +187,29 @@ export default function Profile() {
         {/* Profile Information Card */}
         <Card className="shadow-elegant">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5 text-primary" />
-              معلومات شخصية
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                معلومات شخصية
+              </CardTitle>
+              {!isEditing ? (
+                <Button variant="outline" size="sm" onClick={handleEdit}>
+                  <Edit2 className="ml-2 h-4 w-4" />
+                  تعديل
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleCancel}>
+                    <X className="ml-2 h-4 w-4" />
+                    إلغاء
+                  </Button>
+                  <Button size="sm" onClick={handleSave} disabled={updateProfileMutation.isPending}>
+                    <Save className="ml-2 h-4 w-4" />
+                    {updateProfileMutation.isPending ? "جاري الحفظ..." : "حفظ"}
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
@@ -119,9 +218,18 @@ export default function Profile() {
                   <User className="h-4 w-4" />
                   الاسم الكامل
                 </div>
-                <p className="text-lg font-medium">
-                  {profile?.full_name || user.user_metadata?.full_name || "غير محدد"}
-                </p>
+                {isEditing ? (
+                  <Input
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                    placeholder="أدخل الاسم الكامل"
+                    className="text-lg"
+                  />
+                ) : (
+                  <p className="text-lg font-medium">
+                    {profile?.full_name || user.user_metadata?.full_name || "غير محدد"}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -139,9 +247,19 @@ export default function Profile() {
                   <Phone className="h-4 w-4" />
                   رقم الهاتف
                 </div>
-                <p className="text-lg font-medium" dir="ltr">
-                  {profile?.phone_number || user.user_metadata?.phone_number || "غير محدد"}
-                </p>
+                {isEditing ? (
+                  <Input
+                    value={formData.phone_number}
+                    onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                    placeholder="أدخل رقم الهاتف"
+                    className="text-lg"
+                    dir="ltr"
+                  />
+                ) : (
+                  <p className="text-lg font-medium" dir="ltr">
+                    {profile?.phone_number || user.user_metadata?.phone_number || "غير محدد"}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -149,9 +267,19 @@ export default function Profile() {
                   <Wallet className="h-4 w-4" />
                   رقم محفظة للمكافأت
                 </div>
-                <p className="text-lg font-medium" dir="ltr">
-                  {user.user_metadata?.vodafone_cash || profile?.phone_number || "غير محدد"}
-                </p>
+                {isEditing ? (
+                  <Input
+                    value={formData.vodafone_cash}
+                    onChange={(e) => setFormData({ ...formData, vodafone_cash: e.target.value })}
+                    placeholder="أدخل رقم محفظة فودافون كاش"
+                    className="text-lg"
+                    dir="ltr"
+                  />
+                ) : (
+                  <p className="text-lg font-medium" dir="ltr">
+                    {profile?.vodafone_cash || user.user_metadata?.vodafone_cash || "غير محدد"}
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -184,14 +312,10 @@ export default function Profile() {
                   <Calendar className="h-8 w-8 text-primary" />
                 </div>
                 <div className="text-2xl font-bold text-primary">
-                  {new Date(user.created_at).toLocaleDateString("ar-EG", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}
+                  {daysSinceRegistration}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  تاريخ الانضمام
+                  عدد الأيام منذ التسجيل
                 </div>
               </div>
 

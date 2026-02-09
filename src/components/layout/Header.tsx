@@ -91,6 +91,11 @@ export function Header() {
                   </p>
                 </div>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/profile")}>
+                  <User className="ml-2 h-4 w-4" />
+                  الملف الشخصي
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut} className="text-destructive">
                   <LogOut className="ml-2 h-4 w-4" />
                   {t("nav.signOut")}

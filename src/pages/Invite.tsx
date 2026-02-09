@@ -20,6 +20,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+interface ReferralData {
+  id: string;
+  invited_user_id: string;
+  invited_at: string;
+  invited_name: string | null;
+  invited_email: string | null;
+  days_since_invited: number;
+}
+
 export default function Invite() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
@@ -34,13 +43,22 @@ export default function Invite() {
     }
   }, [user, authLoading, navigate]);
 
+  // Calculate days since registration
+  const daysSinceRegistration = user ? (() => {
+    const registrationDate = new Date(user.created_at);
+    const currentDate = new Date();
+    const diffTime = currentDate.getTime() - registrationDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  })() : 0;
+
   // Generate referral link
   const referralLink = user
     ? `${window.location.origin}/auth?ref=${user.id}`
     : "";
 
   // Fetch referral history
-  const { data: referrals = [], isLoading: referralsLoading } = useQuery({
+  const { data: referrals = [], isLoading: referralsLoading } = useQuery<ReferralData[]>({
     queryKey: ["referrals", user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -73,19 +91,29 @@ export default function Invite() {
       if (profilesError) {
         console.error("Error fetching profiles:", profilesError);
         return data.map((r) => ({
-          ...r,
+          id: r.id,
+          invited_user_id: r.invited_user_id,
+          invited_at: r.invited_at,
           invited_name: null,
           invited_email: null,
+          days_since_invited: 0,
         }));
       }
 
       // Merge referral data with profile data
       return data.map((referral) => {
         const profile = profiles?.find((p) => p.user_id === referral.invited_user_id);
+        const daysSinceInvited = Math.floor(
+          (Date.now() - new Date(referral.invited_at).getTime()) / (1000 * 60 * 60 * 24)
+        );
+        
         return {
-          ...referral,
+          id: referral.id,
+          invited_user_id: referral.invited_user_id,
+          invited_at: referral.invited_at,
           invited_name: profile?.full_name || null,
           invited_email: profile?.email || null,
+          days_since_invited: daysSinceInvited,
         };
       });
     },
@@ -158,6 +186,32 @@ export default function Invite() {
             {t("invite.subtitle")}
           </p>
         </div>
+
+        {/* Days Counter Card */}
+        <Card className="shadow-elegant">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${
+                daysSinceRegistration >= 30 
+                  ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400' 
+                  : 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+              }`}>
+                <span className="text-2xl font-bold">
+                  {daysSinceRegistration}
+                </span>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">
+                عدد الأيام منذ التسجيل
+              </h3>
+              <p className="text-muted-foreground">
+                {daysSinceRegistration >= 30 
+                  ? '🎉 لقد أكملت 30 يوم! يمكنك الآن الحصول على مكافآتك' 
+                  : `متبقي ${30 - daysSinceRegistration} يوم للحصول على المكافأة`
+                }
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Invite Link Card */}
         <Card className="shadow-elegant">
@@ -253,6 +307,7 @@ export default function Invite() {
                       <TableHead>{t("invite.invitedName")}</TableHead>
                       <TableHead>{t("invite.invitedEmail")}</TableHead>
                       <TableHead>{t("invite.invitedDate")}</TableHead>
+                      <TableHead>عدد الأيام</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -278,6 +333,20 @@ export default function Invite() {
                                 month: "short",
                                 day: "numeric",
                               })}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
+                              referral.days_since_invited >= 30
+                                ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400'
+                                : 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+                            }`}>
+                              {referral.days_since_invited}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              {referral.days_since_invited >= 30 ? '✅' : `(${referral.days_since_invited}/30)`}
                             </span>
                           </div>
                         </TableCell>
