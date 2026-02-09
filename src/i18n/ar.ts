@@ -186,6 +186,7 @@ export const ar = {
     ],
     exportToExcel: "تصدير إلى Excel",
     openWhatsApp: "فتح واتساب",
+    installWhatsAppExtension: "تثبيت إضافة واتساب",
     startAutomatedSending: "بدء الإرسال التلقائي",
     progress: "التقدم",
     numbers: "الأرقام",

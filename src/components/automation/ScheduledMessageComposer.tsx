@@ -473,32 +473,7 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
             <TabsContent value="immediate" className="space-y-4">
               {/* Immediate sending content - similar to original MessageComposer */}
               <div className="space-y-4">
-                <div className="rounded-lg bg-amber-50 p-3 border border-amber-200">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                    <div className="text-sm text-amber-800">
-                      <p className="font-medium mb-1">{t("whatsapp.importantRead")}</p>
-                      <ul className="text-xs space-y-1">
-                        {tArray("whatsapp.importantInstructions").map((instruction: string, index: number) => (
-                          <li key={index}>{instruction}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="message">{t("whatsapp.message")}</Label>
-                  <Textarea
-                    id="message"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder={t("whatsapp.messagePlaceholder")}
-                    rows={5}
-                    className="resize-none"
-                    disabled={isSending}
-                  />
-                </div>
 
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-2 sm:flex-row">
@@ -525,6 +500,16 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
                     >
                       <ExternalLink className="mr-2 h-4 w-4" />
                       {t("whatsapp.openWhatsApp")}
+                    </Button>
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button
+                      onClick={() => window.open('https://chromewebstore.google.com/detail/wasender-bulk-messaging-a/kodbldeoapjomlhbbnlcnhaphfakdhfk', '_blank')}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      {t("whatsapp.installWhatsAppExtension")}
                     </Button>
                   </div>
 
