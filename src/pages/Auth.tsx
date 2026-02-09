@@ -132,19 +132,7 @@ export default function Auth() {
       }
 
       if (data.user) {
-        // If there's a valid referral code, create the referral record
-        if (referralCode && referralCode !== data.user.id) {
-          try {
-            await supabase.from("referrals").insert({
-              inviter_user_id: referralCode,
-              invited_user_id: data.user.id,
-            });
-          } catch (refError) {
-            console.error("Failed to save referral:", refError);
-            // Don't block signup if referral save fails
-          }
-        }
-        
+        // Referral is now handled automatically by database trigger
         toast.success(t("auth.signupSuccess"));
         navigate("/");
       }
