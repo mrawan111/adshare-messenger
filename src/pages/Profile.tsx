@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useAdminSettings } from "@/hooks/useAdminSettings";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { UserPreferencesPanel } from "@/components/user/UserPreferencesPanel";
 import { t } from "@/i18n";
 
 export default function Profile() {
@@ -24,6 +26,7 @@ export default function Profile() {
   });
   const queryClient = useQueryClient();
   const { isDaysCounterEnabled } = useAdminSettings();
+  const { getEffectiveDaysCounterSetting, getEffectiveReferralBonusSetting } = useUserPreferences();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -100,6 +103,10 @@ export default function Profile() {
 
   const referralCount = referrals.length;
   const daysSinceRegistration = Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Get effective settings (combines admin and user preferences)
+  const showDaysCounter = getEffectiveDaysCounterSetting(isDaysCounterEnabled);
+  const showReferralBonus = getEffectiveReferralBonusSetting(true); // Assuming referral bonus is always enabled by admin
 
   return (
     <Layout>
@@ -189,27 +196,31 @@ export default function Profile() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`grid gap-4 ${isDaysCounterEnabled ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+            <div className={`grid gap-4 ${showDaysCounter && showReferralBonus ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
               <div className="text-center p-4 border rounded-lg">
                 <div className="flex items-center justify-center mb-2"><Users className="h-8 w-8 text-primary" /></div>
                 <div className="text-2xl font-bold text-primary">{referralsLoading ? "..." : referralCount}</div>
                 <div className="text-sm text-muted-foreground">عدد الدعوات المرسلة</div>
               </div>
-              {isDaysCounterEnabled && (
+              {showDaysCounter && (
                 <div className="text-center p-4 border rounded-lg">
                   <div className="flex items-center justify-center mb-2"><Calendar className="h-8 w-8 text-primary" /></div>
                   <div className="text-2xl font-bold text-primary">{daysSinceRegistration}</div>
                   <div className="text-sm text-muted-foreground">عدد الأيام منذ التسجيل</div>
                 </div>
               )}
-              <div className="text-center p-4 border rounded-lg">
-                <div className="flex items-center justify-center mb-2"><Wallet className="h-8 w-8 text-primary" /></div>
-                <div className="text-2xl font-bold text-primary">{referralCount * 1000}</div>
-                <div className="text-sm text-muted-foreground">المكافآت المحتملة (ج.م)</div>
-              </div>
+              {showReferralBonus && (
+                <div className="text-center p-4 border rounded-lg">
+                  <div className="flex items-center justify-center mb-2"><Wallet className="h-8 w-8 text-primary" /></div>
+                  <div className="text-2xl font-bold text-primary">{referralCount * 1000}</div>
+                  <div className="text-sm text-muted-foreground">المكافآت المحتملة (ج.م)</div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
+
+        <UserPreferencesPanel />
 
         <Card className="shadow-elegant">
           <CardHeader><CardTitle>حالة الحساب</CardTitle></CardHeader>

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminSettings } from "@/hooks/useAdminSettings";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { t } from "@/i18n";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -29,6 +30,7 @@ export default function Invite() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
   const { isDaysCounterEnabled } = useAdminSettings();
+  const { getEffectiveDaysCounterSetting } = useUserPreferences();
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -39,6 +41,7 @@ export default function Invite() {
   }, [user, authLoading, navigate]);
 
   const daysSinceRegistration = user ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+  const showDaysCounter = getEffectiveDaysCounterSetting(isDaysCounterEnabled);
   const referralLink = user ? `${window.location.origin}/auth?ref=${user.id}` : "";
 
   const { data: referrals = [], isLoading: referralsLoading } = useQuery<ReferralData[]>({
@@ -117,7 +120,7 @@ export default function Invite() {
           <p className="mt-2 text-muted-foreground">{t("invite.subtitle")}</p>
         </div>
 
-        {isDaysCounterEnabled && (
+        {showDaysCounter && (
           <Card className="shadow-elegant">
             <CardContent className="pt-6">
               <div className="text-center">
@@ -187,7 +190,7 @@ export default function Invite() {
                       <TableHead>{t("invite.invitedName")}</TableHead>
                       <TableHead>رقم الهاتف</TableHead>
                       <TableHead>{t("invite.invitedDate")}</TableHead>
-                      {isDaysCounterEnabled && <TableHead>عدد الأيام</TableHead>}
+                      {showDaysCounter && <TableHead>عدد الأيام</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -206,7 +209,7 @@ export default function Invite() {
                             <span className="text-sm">{new Date(referral.invited_at).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" })}</span>
                           </div>
                         </TableCell>
-                        {isDaysCounterEnabled && (
+                        {showDaysCounter && (
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${referral.days_since_invited >= 30 ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'}`}>{referral.days_since_invited}</span>

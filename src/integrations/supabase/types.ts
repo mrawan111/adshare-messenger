@@ -146,6 +146,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          show_days_counter: boolean
+          show_referral_bonus: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          show_days_counter?: boolean
+          show_referral_bonus?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          show_days_counter?: boolean
+          show_referral_bonus?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKey: "user_id"
+            references: "users"
+            fields: ["user_id"]
+          }
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
