@@ -85,7 +85,7 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
                 <div className="px-2 py-1.5">
-                  <p className="text-sm font-medium">{user.email}</p>
+                  <p className="text-sm font-medium">{user.user_metadata?.phone_number || user.user_metadata?.full_name || 'مستخدم'}</p>
                   <p className="text-xs text-muted-foreground">
                     {isAdmin ? t("nav.admin") : t("nav.user")}
                   </p>

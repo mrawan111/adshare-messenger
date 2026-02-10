@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
-import { MessageCircle, Mail, Lock, Phone, User } from "lucide-react";
+import { Lock, Phone, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,14 +12,19 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { t } from "@/i18n";
 
+// Helper: convert phone number to a fake email for Supabase auth
+const phoneToEmail = (phone: string) => {
+  const cleaned = phone.replace(/\D/g, "");
+  return `${cleaned}@phone.local`;
+};
+
 const loginSchema = z.object({
-  email: z.string().email(t("auth.invalidEmail")),
+  phone: z.string().min(10, t("auth.phoneMin")),
   password: z.string().min(6, t("auth.passwordMin")),
 });
 
 const signupSchema = z.object({
   fullName: z.string().min(2, t("auth.nameMin")),
-  email: z.string().email(t("auth.invalidEmail")),
   phone: z.string().min(10, t("auth.phoneMin")),
   vodafoneCash: z.string().min(10, t("auth.phoneMin")),
   password: z.string().min(6, t("auth.passwordMin")),
@@ -31,23 +36,20 @@ export default function Auth() {
   const { user, isLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Get referral code from URL
   const referralCode = searchParams.get("ref");
   
   // Login form state
-  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPhone, setLoginPhone] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   
   // Signup form state
   const [signupName, setSignupName] = useState("");
-  const [signupEmail, setSignupEmail] = useState("");
   const [signupPhone, setSignupPhone] = useState("");
   const [signupVodafoneCash, setSignupVodafoneCash] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
 
   useEffect(() => {
     if (!isLoading && user) {
-      // Check if there's a redirect destination stored
       const redirectTo = sessionStorage.getItem("redirectAfterAuth");
       if (redirectTo) {
         sessionStorage.removeItem("redirectAfterAuth");
@@ -61,7 +63,7 @@ export default function Auth() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validation = loginSchema.safeParse({ email: loginEmail, password: loginPassword });
+    const validation = loginSchema.safeParse({ phone: loginPhone, password: loginPassword });
     if (!validation.success) {
       toast.error(validation.error.errors[0].message);
       return;
@@ -69,14 +71,15 @@ export default function Auth() {
 
     setIsSubmitting(true);
     try {
+      const fakeEmail = phoneToEmail(loginPhone);
       const { error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
+        email: fakeEmail,
         password: loginPassword,
       });
 
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
-          toast.error(t("auth.invalidCredentials"));
+          toast.error("رقم الهاتف أو كلمة المرور غير صحيحة");
         } else {
           toast.error(error.message);
         }
@@ -97,7 +100,6 @@ export default function Auth() {
     
     const validation = signupSchema.safeParse({
       fullName: signupName,
-      email: signupEmail,
       phone: signupPhone,
       vodafoneCash: signupVodafoneCash,
       password: signupPassword,
@@ -110,31 +112,30 @@ export default function Auth() {
 
     setIsSubmitting(true);
     try {
-      // Check if email already exists before attempting signup
+      // Check if phone already exists
       const { data: existingUsers, error: checkError } = await supabase
         .from('profiles')
-        .select('email')
-        .eq('email', signupEmail)
+        .select('phone_number')
+        .eq('phone_number', signupPhone)
         .limit(1);
 
       if (checkError) {
-        console.error("Error checking email:", checkError);
+        console.error("Error checking phone:", checkError);
         toast.error(t("auth.unexpectedError"));
         return;
       }
 
       if (existingUsers && existingUsers.length > 0) {
-        toast.error(t("auth.emailExists"));
+        toast.error("رقم الهاتف مسجل بالفعل. يرجى تسجيل الدخول.");
         return;
       }
 
-      const redirectUrl = `${window.location.origin}/`;
+      const fakeEmail = phoneToEmail(signupPhone);
       
       const { data, error } = await supabase.auth.signUp({
-        email: signupEmail,
+        email: fakeEmail,
         password: signupPassword,
         options: {
-          emailRedirectTo: redirectUrl,
           data: {
             full_name: signupName,
             phone_number: signupPhone,
@@ -146,7 +147,7 @@ export default function Auth() {
 
       if (error) {
         if (error.message.includes("already registered") || error.message.includes("User already registered")) {
-          toast.error(t("auth.emailExists"));
+          toast.error("رقم الهاتف مسجل بالفعل. يرجى تسجيل الدخول.");
         } else {
           toast.error(error.message);
         }
@@ -154,7 +155,6 @@ export default function Auth() {
       }
 
       if (data.user) {
-        // Referral is now handled automatically by database trigger
         toast.success(t("auth.signupSuccess"));
         navigate("/");
       }
@@ -203,16 +203,17 @@ export default function Auth() {
             <TabsContent value="login" className="space-y-4 pt-4">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">{t("auth.email")}</Label>
+                  <Label htmlFor="login-phone">{t("auth.phone")}</Label>
                   <div className="relative">
-                    <Mail className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Phone className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                      id="login-email"
-                      type="email"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder={t("auth.emailPlaceholder")}
+                      id="login-phone"
+                      type="tel"
+                      value={loginPhone}
+                      onChange={(e) => setLoginPhone(e.target.value)}
+                      placeholder={t("auth.phonePlaceholder")}
                       className="ps-10"
+                      dir="ltr"
                       required
                     />
                   </div>
@@ -263,22 +264,6 @@ export default function Auth() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">{t("auth.email")}</Label>
-                  <div className="relative">
-                    <Mail className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      value={signupEmail}
-                      onChange={(e) => setSignupEmail(e.target.value)}
-                      placeholder={t("auth.emailPlaceholder")}
-                      className="ps-10"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
                   <Label htmlFor="signup-phone">{t("auth.phone")}</Label>
                   <div className="relative">
                     <Phone className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -289,6 +274,7 @@ export default function Auth() {
                       onChange={(e) => setSignupPhone(e.target.value)}
                       placeholder={t("auth.phonePlaceholder")}
                       className="ps-10"
+                      dir="ltr"
                       required
                     />
                   </div>
@@ -305,6 +291,7 @@ export default function Auth() {
                       onChange={(e) => setSignupVodafoneCash(e.target.value)}
                       placeholder="010123456789"
                       className="ps-10"
+                      dir="ltr"
                       required
                     />
                   </div>
