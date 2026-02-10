@@ -150,32 +150,32 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          profile_id: string
           show_days_counter: boolean
           show_referral_bonus: boolean
           updated_at: string
-          user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          profile_id: string
           show_days_counter?: boolean
           show_referral_bonus?: boolean
           updated_at?: string
-          user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          profile_id?: string
           show_days_counter?: boolean
           show_referral_bonus?: boolean
           updated_at?: string
-          user_id?: string
         }
         Relationships: [
           {
-            foreignKey: "user_id"
-            references: "users"
-            fields: ["user_id"]
+            foreignKey: "profile_id"
+            references: "profiles"
+            fields: ["profile_id"]
           }
         ]
       }

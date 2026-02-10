@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Users } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { ReferralAnalytics } from "@/components/analytics/ReferralAnalytics";
 import { AdminSettingsPanel } from "@/components/admin/AdminSettingsPanel";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -42,6 +43,16 @@ export default function Analytics() {
         <p className="mt-1 text-muted-foreground">
           مراقبة أداء نظام الإحالة ومتابعة الدعوات
         </p>
+      </div>
+
+      <div className="mb-6">
+        <Button 
+          onClick={() => navigate("/admin/users")}
+          className="flex items-center gap-2"
+        >
+          <Users className="h-4 w-4" />
+          إدارة المستخدمين
+        </Button>
       </div>
 
       <div className="space-y-8">

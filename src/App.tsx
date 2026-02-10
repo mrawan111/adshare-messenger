@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import AddPost from "./pages/AddPost";
 import WhatsApp from "./pages/WhatsApp";
 import Analytics from "./pages/Analytics";
+import AdminUsersDashboard from "./pages/AdminUsersDashboard";
 import Auth from "./pages/Auth";
 import Invite from "./pages/Invite";
 import Profile from "./pages/Profile";
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/add-post" element={<AddPost />} />
             <Route path="/whatsapp" element={<WhatsApp />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/admin/users" element={<AdminUsersDashboard />} />
             <Route path="/post/:id" element={<Post />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
