@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminSettings } from "@/hooks/useAdminSettings";
 import { t } from "@/i18n";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -27,6 +28,7 @@ interface ReferralData {
 export default function Invite() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
+  const { isDaysCounterEnabled } = useAdminSettings();
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -115,19 +117,21 @@ export default function Invite() {
           <p className="mt-2 text-muted-foreground">{t("invite.subtitle")}</p>
         </div>
 
-        <Card className="shadow-elegant">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${daysSinceRegistration >= 30 ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'}`}>
-                <span className="text-2xl font-bold">{daysSinceRegistration}</span>
+        {isDaysCounterEnabled && (
+          <Card className="shadow-elegant">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${daysSinceRegistration >= 30 ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'}`}>
+                  <span className="text-2xl font-bold">{daysSinceRegistration}</span>
+                </div>
+                <h3 className="text-lg font-semibold mb-2">عدد الأيام منذ التسجيل</h3>
+                <p className="text-muted-foreground">
+                  {daysSinceRegistration >= 30 ? '🎉 لقد أكملت 30 يوم! يمكنك الآن الحصول على مكافآتك' : `متبقي ${30 - daysSinceRegistration} يوم للحصول على المكافأة`}
+                </p>
               </div>
-              <h3 className="text-lg font-semibold mb-2">عدد الأيام منذ التسجيل</h3>
-              <p className="text-muted-foreground">
-                {daysSinceRegistration >= 30 ? '🎉 لقد أكملت 30 يوم! يمكنك الآن الحصول على مكافآتك' : `متبقي ${30 - daysSinceRegistration} يوم للحصول على المكافأة`}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="shadow-elegant">
           <CardHeader>
@@ -183,7 +187,7 @@ export default function Invite() {
                       <TableHead>{t("invite.invitedName")}</TableHead>
                       <TableHead>رقم الهاتف</TableHead>
                       <TableHead>{t("invite.invitedDate")}</TableHead>
-                      <TableHead>عدد الأيام</TableHead>
+                      {isDaysCounterEnabled && <TableHead>عدد الأيام</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -202,12 +206,14 @@ export default function Invite() {
                             <span className="text-sm">{new Date(referral.invited_at).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" })}</span>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${referral.days_since_invited >= 30 ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'}`}>{referral.days_since_invited}</span>
-                            <span className="text-sm text-muted-foreground">{referral.days_since_invited >= 30 ? '✅' : `(${referral.days_since_invited}/30)`}</span>
-                          </div>
-                        </TableCell>
+                        {isDaysCounterEnabled && (
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${referral.days_since_invited >= 30 ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'}`}>{referral.days_since_invited}</span>
+                              <span className="text-sm text-muted-foreground">{referral.days_since_invited >= 30 ? '✅' : `(${referral.days_since_invited}/30)`}</span>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>

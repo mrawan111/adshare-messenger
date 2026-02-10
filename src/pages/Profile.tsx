@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useAdminSettings } from "@/hooks/useAdminSettings";
+import { t } from "@/i18n";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -21,6 +23,7 @@ export default function Profile() {
     vodafone_cash: "",
   });
   const queryClient = useQueryClient();
+  const { isDaysCounterEnabled } = useAdminSettings();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -186,17 +189,19 @@ export default function Profile() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className={`grid gap-4 ${isDaysCounterEnabled ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
               <div className="text-center p-4 border rounded-lg">
                 <div className="flex items-center justify-center mb-2"><Users className="h-8 w-8 text-primary" /></div>
                 <div className="text-2xl font-bold text-primary">{referralsLoading ? "..." : referralCount}</div>
                 <div className="text-sm text-muted-foreground">عدد الدعوات المرسلة</div>
               </div>
-              <div className="text-center p-4 border rounded-lg">
-                <div className="flex items-center justify-center mb-2"><Calendar className="h-8 w-8 text-primary" /></div>
-                <div className="text-2xl font-bold text-primary">{daysSinceRegistration}</div>
-                <div className="text-sm text-muted-foreground">عدد الأيام منذ التسجيل</div>
-              </div>
+              {isDaysCounterEnabled && (
+                <div className="text-center p-4 border rounded-lg">
+                  <div className="flex items-center justify-center mb-2"><Calendar className="h-8 w-8 text-primary" /></div>
+                  <div className="text-2xl font-bold text-primary">{daysSinceRegistration}</div>
+                  <div className="text-sm text-muted-foreground">عدد الأيام منذ التسجيل</div>
+                </div>
+              )}
               <div className="text-center p-4 border rounded-lg">
                 <div className="flex items-center justify-center mb-2"><Wallet className="h-8 w-8 text-primary" /></div>
                 <div className="text-2xl font-bold text-primary">{referralCount * 1000}</div>
