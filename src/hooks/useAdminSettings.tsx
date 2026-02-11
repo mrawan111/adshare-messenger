@@ -15,7 +15,6 @@ export function useAdminSettings() {
   const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
 
-  // Fetch all admin settings
   const { data: settings = [], isLoading } = useQuery<AdminSetting[]>({
     queryKey: ["admin_settings"],
     queryFn: async () => {
@@ -25,17 +24,16 @@ export function useAdminSettings() {
         .order("key");
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as unknown as AdminSetting[];
     },
     enabled: !!user && isAdmin,
   });
 
-  // Update setting mutation
   const updateSettingMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
       const { error } = await supabase
         .from("admin_settings")
-        .update({ value })
+        .update({ value } as Record<string, string>)
         .eq("key", key);
 
       if (error) throw error;
@@ -50,21 +48,16 @@ export function useAdminSettings() {
     },
   });
 
-  // Get specific setting value
   const getSetting = (key: string, defaultValue: string = "false") => {
     const setting = settings.find(s => s.key === key);
     return setting?.value || defaultValue;
   };
 
-  // Update specific setting
   const updateSetting = (key: string, value: string) => {
     updateSettingMutation.mutate({ key, value });
   };
 
-  // Check if days counter is enabled
   const isDaysCounterEnabled = getSetting("days_counter_enabled", "true") === "true";
-
-  // Check if referral bonus is enabled
   const isReferralBonusEnabled = getSetting("referral_bonus_enabled", "true") === "true";
 
   return {

@@ -15,6 +15,16 @@ import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { UserPreferencesPanel } from "@/components/user/UserPreferencesPanel";
 import { t } from "@/i18n";
 
+interface ProfileData {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  phone_number: string;
+  vodafone_cash: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function Profile() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
@@ -35,7 +45,7 @@ export default function Profile() {
     }
   }, [user, authLoading, navigate]);
 
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery<ProfileData | null>({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
       if (!user) return null;
@@ -45,7 +55,7 @@ export default function Profile() {
         .eq("user_id", user.id)
         .single();
       if (error) { console.error("Error fetching profile:", error); return null; }
-      return data;
+      return data as unknown as ProfileData;
     },
     enabled: !!user,
   });
@@ -56,7 +66,7 @@ export default function Profile() {
       if (!user) return [];
       const { data, error } = await supabase.from("referrals").select("id").eq("inviter_user_id", user.id);
       if (error) { console.error("Error fetching referrals:", error); return []; }
-      return data;
+      return data as unknown as Array<{ id: string }>;
     },
     enabled: !!user,
   });
@@ -64,7 +74,7 @@ export default function Profile() {
   const updateProfileMutation = useMutation({
     mutationFn: async (updateData: typeof formData) => {
       if (!user) throw new Error("User not authenticated");
-      const { error } = await supabase.from("profiles").update(updateData).eq("user_id", user.id);
+      const { error } = await supabase.from("profiles").update(updateData as Record<string, string>).eq("user_id", user.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -103,10 +113,8 @@ export default function Profile() {
 
   const referralCount = referrals.length;
   const daysSinceRegistration = Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24));
-  
-  // Get effective settings (combines admin and user preferences)
   const showDaysCounter = getEffectiveDaysCounterSetting(isDaysCounterEnabled);
-  const showReferralBonus = getEffectiveReferralBonusSetting(true); // Assuming referral bonus is always enabled by admin
+  const showReferralBonus = getEffectiveReferralBonusSetting(true);
 
   return (
     <Layout>

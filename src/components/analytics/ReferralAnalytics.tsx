@@ -28,7 +28,7 @@ interface UserReferralStats {
 }
 
 export function ReferralAnalytics() {
-  const { data: referrals = [], isLoading: referralsLoading } = useQuery({
+  const { data: referrals = [], isLoading: referralsLoading } = useQuery<ReferralWithDetails[]>({
     queryKey: ["admin-referrals"],
     queryFn: async () => {
       const { data: referralData, error: referralError } = await supabase
@@ -44,11 +44,14 @@ export function ReferralAnalytics() {
 
       if (profilesError) throw profilesError;
 
+      const typedProfiles = profiles as unknown as Array<{ user_id: string; full_name: string | null; phone_number: string }>;
+      const typedReferrals = referralData as unknown as Array<{ id: string; inviter_user_id: string; invited_user_id: string; invited_at: string }>;
+
       const profileMap = new Map(
-        profiles?.map(p => [p.user_id, { name: p.full_name, phone: p.phone_number }]) || []
+        typedProfiles?.map(p => [p.user_id, { name: p.full_name, phone: p.phone_number }]) || []
       );
 
-      return referralData?.map(ref => ({
+      return typedReferrals?.map(ref => ({
         ...ref,
         inviter_name: profileMap.get(ref.inviter_user_id)?.name || null,
         inviter_phone: profileMap.get(ref.inviter_user_id)?.phone || "غير معروف",
@@ -169,7 +172,7 @@ export function ReferralAnalytics() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">إجمالي الدعوات</CardTitle>

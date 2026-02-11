@@ -56,7 +56,8 @@ export default function Invite() {
 
       if (error) { console.error("Error fetching referrals:", error); return []; }
 
-      const invitedUserIds = data.map((r) => r.invited_user_id);
+      const typedData = data as unknown as Array<{ id: string; invited_user_id: string; invited_at: string }>;
+      const invitedUserIds = typedData.map((r) => r.invited_user_id);
       if (invitedUserIds.length === 0) return [];
 
       const { data: profiles } = await supabase
@@ -64,8 +65,10 @@ export default function Invite() {
         .select("user_id, full_name, phone_number")
         .in("user_id", invitedUserIds);
 
-      return data.map((referral) => {
-        const profile = profiles?.find((p) => p.user_id === referral.invited_user_id);
+      const typedProfiles = profiles as unknown as Array<{ user_id: string; full_name: string | null; phone_number: string | null }>;
+
+      return typedData.map((referral) => {
+        const profile = typedProfiles?.find((p) => p.user_id === referral.invited_user_id);
         return {
           id: referral.id,
           invited_user_id: referral.invited_user_id,

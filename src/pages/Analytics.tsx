@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { UserPlus, Users } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { ReferralAnalytics } from "@/components/analytics/ReferralAnalytics";
-import { AdminSettingsPanel } from "@/components/admin/AdminSettingsPanel";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,7 +55,6 @@ export default function Analytics() {
       </div>
 
       <div className="space-y-8">
-        <AdminSettingsPanel />
         <ReferralAnalytics />
       </div>
     </Layout>
