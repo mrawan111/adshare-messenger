@@ -35,7 +35,7 @@ export default function Profile() {
   });
   const queryClient = useQueryClient();
   const { isDaysCounterEnabled } = useAdminSettings();
-  const { getEffectiveDaysCounterSetting, getEffectiveReferralBonusSetting } = useUserPreferences();
+  const { getEffectiveDaysCounterSetting } = useUserPreferences();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -113,7 +113,7 @@ export default function Profile() {
   const referralCount = referrals.length;
   const daysSinceRegistration = Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24));
   const showDaysCounter = getEffectiveDaysCounterSetting(isDaysCounterEnabled);
-  const showReferralBonus = getEffectiveReferralBonusSetting(true);
+  const showReferralBonus = showDaysCounter;
 
   return (
     <Layout>

@@ -95,6 +95,7 @@ export default function AdminUsersDashboard() {
       );
 
       return typedProfiles
+        .filter((profile) => (profile.full_name || "").trim().length > 0)
         .map((profile) => ({
           profile_id: profile.id,
           user_id: profile.user_id,

@@ -27,6 +27,8 @@ interface UserReferralStats {
   lastReferralDate: string | null;
 }
 
+const isNonEmpty = (value: string | null | undefined) => (value || "").trim().length > 0;
+
 export function ReferralAnalytics() {
   const { data: referrals = [], isLoading: referralsLoading } = useQuery<ReferralWithDetails[]>({
     queryKey: ["admin-referrals"],
@@ -51,13 +53,19 @@ export function ReferralAnalytics() {
         typedProfiles?.map(p => [p.user_id, { name: p.full_name, phone: p.phone_number }]) || []
       );
 
-      return typedReferrals?.map(ref => ({
+      const mapped = typedReferrals?.map(ref => ({
         ...ref,
         inviter_name: profileMap.get(ref.inviter_user_id)?.name || null,
         inviter_phone: profileMap.get(ref.inviter_user_id)?.phone || "غير معروف",
         invited_name: profileMap.get(ref.invited_user_id)?.name || null,
         invited_phone: profileMap.get(ref.invited_user_id)?.phone || "غير معروف",
       })) as ReferralWithDetails[];
+
+      return mapped.filter((ref) =>
+        isNonEmpty(ref.inviter_name) &&
+        isNonEmpty(ref.inviter_phone) &&
+        ref.inviter_phone !== "غير معروف"
+      );
     },
   });
 

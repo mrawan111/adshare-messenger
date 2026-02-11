@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Copy, Check, Share2, Users, Calendar, Phone } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -148,7 +148,9 @@ export default function Invite() {
                   <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center"><span className="text-white text-sm font-bold">💰</span></div>
                   <div className="space-y-2">
                     <p className="text-gray-800 dark:text-gray-200 font-medium">يمكنك ترشيح أي شخص للعمل دليفري من خلال هذا الرابط،</p>
-                    <p className="text-green-600 dark:text-green-400 font-semibold text-lg">وعند إكماله شهر عمل كامل تحصل على بونص 1000 جنيه.</p>
+                    {showDaysCounter && (
+                      <p className="text-green-600 dark:text-green-400 font-semibold text-lg">وعند إكماله شهر عمل كامل تحصل على بونص 1000 جنيه.</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -232,3 +234,4 @@ export default function Invite() {
     </Layout>
   );
 }
+
