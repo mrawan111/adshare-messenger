@@ -36,6 +36,12 @@ interface ReferralData {
   invited_at: string;
 }
 
+interface UserPreferenceInsert {
+  profile_id: string;
+  show_days_counter: boolean;
+  show_referral_bonus: boolean;
+}
+
 export default function AdminUsersDashboard() {
   const navigate = useNavigate();
   const { isAdmin, isLoading: authLoading } = useAuth();
@@ -170,7 +176,7 @@ export default function AdminUsersDashboard() {
               profile_id: userId,
               show_days_counter: preference === 'show_days_counter' ? value : true,
               show_referral_bonus: preference === 'show_referral_bonus' ? value : true,
-            }] as any);
+            }] as UserPreferenceInsert[]);
           if (error) throw error;
         }
       } catch (error) {
@@ -266,7 +272,7 @@ export default function AdminUsersDashboard() {
                 {users.map((user) => (
                   <div
                     key={user.id}
-                    className="flex flex-col gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors lg:flex-row lg:items-center lg:justify-between"
                   >
                     {/* User Info */}
                     <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -309,14 +315,15 @@ export default function AdminUsersDashboard() {
                       </div>
                     </div>
 
-                    {/* Toggle Controls */}
-                    <div className="flex items-center gap-4 sm:gap-3 justify-end sm:justify-start shrink-0">
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor={`days-counter-${user.id}`} className="text-xs sm:text-sm whitespace-nowrap">
+                    {/* Toggle Controls - Fixed UI with better RTL support */}
+                    <div className="flex flex-col gap-4 w-full sm:w-auto sm:flex-row sm:items-center sm:gap-6 shrink-0 border-t sm:border-t-0 pt-4 sm:pt-0">
+                      <div className="flex items-center justify-between gap-4 bg-muted/30 p-3 rounded-md sm:bg-transparent sm:p-0">
+                        <Label htmlFor={`days-counter-${user.id}`} className="text-sm font-medium cursor-pointer">
                           عداد الأيام
                         </Label>
                         <Switch
                           id={`days-counter-${user.id}`}
+                          dir="ltr"
                           checked={user.user_preferences?.show_days_counter ?? true}
                           onCheckedChange={() => 
                             handleToggleDaysCounter(
@@ -328,12 +335,13 @@ export default function AdminUsersDashboard() {
                         />
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor={`referral-bonus-${user.id}`} className="text-xs sm:text-sm whitespace-nowrap">
-                          مكافآت
+                      <div className="flex items-center justify-between gap-4 bg-muted/30 p-3 rounded-md sm:bg-transparent sm:p-0">
+                        <Label htmlFor={`referral-bonus-${user.id}`} className="text-sm font-medium cursor-pointer">
+                          مكافآت الترشيح
                         </Label>
                         <Switch
                           id={`referral-bonus-${user.id}`}
+                          dir="ltr"
                           checked={user.user_preferences?.show_referral_bonus ?? true}
                           onCheckedChange={() => 
                             handleToggleReferralBonus(
