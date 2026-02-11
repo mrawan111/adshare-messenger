@@ -67,9 +67,7 @@ export default function AddPost() {
       }
       setSelectedFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
+      reader.onloadend = () => { setImagePreview(reader.result as string); };
       reader.readAsDataURL(file);
     }
   };
@@ -77,50 +75,33 @@ export default function AddPost() {
   const clearImage = () => {
     setSelectedFile(null);
     setImagePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) { fileInputRef.current.value = ""; }
   };
 
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!selectedFile) throw new Error("No image selected");
-
       setIsUploading(true);
 
-      // Generate unique filename
       const fileExt = selectedFile.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-      // Upload to storage
-      const { error: uploadError } = await supabase.storage
-        .from("post-images")
-        .upload(fileName, selectedFile);
-
+      const { error: uploadError } = await supabase.storage.from("post-images").upload(fileName, selectedFile);
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("post-images")
-        .getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(fileName);
 
-      // Format phone number with selected country code
       let formattedPhone = phoneNumber.trim();
       if (formattedPhone) {
-        // Remove leading zero if present
-        if (formattedPhone.startsWith("0")) {
-          formattedPhone = formattedPhone.slice(1);
-        }
-        // Add country code
+        if (formattedPhone.startsWith("0")) { formattedPhone = formattedPhone.slice(1); }
         formattedPhone = countryCode + formattedPhone;
       }
 
-      // Create post with image URL
-      const { error: insertError } = await supabase.from("posts").insert({
+      const { error: insertError } = await supabase.from("posts").insert([{
         image_url: urlData.publicUrl,
         description,
         phone_number: formattedPhone || null,
-      });
+      }] as any);
 
       if (insertError) throw insertError;
     },
@@ -133,45 +114,25 @@ export default function AddPost() {
       console.error("Error creating post:", error);
       toast.error(t("addPost.error"));
     },
-    onSettled: () => {
-      setIsUploading(false);
-    },
+    onSettled: () => { setIsUploading(false); },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFile) {
-      toast.error(t("addPost.selectImage"));
-      return;
-    }
-    if (!description.trim()) {
-      toast.error(t("addPost.enterDescription"));
-      return;
-    }
+    if (!selectedFile) { toast.error(t("addPost.selectImage")); return; }
+    if (!description.trim()) { toast.error(t("addPost.enterDescription")); return; }
     createMutation.mutate();
   };
 
   if (authLoading) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center py-16">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        </div>
-      </Layout>
-    );
+    return (<Layout><div className="flex items-center justify-center py-16"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div></Layout>);
   }
-
-  if (!isAdmin) {
-    return null;
-  }
+  if (!isAdmin) return null;
 
   return (
     <Layout>
       <div className="mb-6">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
+        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-4 w-4" />
           {t("posts.backToPosts")}
         </Link>
@@ -189,106 +150,46 @@ export default function AddPost() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label>{t("addPost.image")}</Label>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
                 {imagePreview ? (
                   <div className="relative aspect-video overflow-hidden rounded-lg border border-border bg-muted">
-                    <img
-                      src={imagePreview}
-                      alt="معاينة"
-                      className="h-full w-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={clearImage}
-                      className="absolute end-2 top-2 rounded-full bg-foreground/80 p-1.5 text-background transition-colors hover:bg-foreground"
-                    >
+                    <img src={imagePreview} alt="معاينة" className="h-full w-full object-cover" />
+                    <button type="button" onClick={clearImage} className="absolute end-2 top-2 rounded-full bg-foreground/80 p-1.5 text-background transition-colors hover:bg-foreground">
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex aspect-video w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 transition-colors hover:border-primary hover:bg-muted"
-                  >
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="flex aspect-video w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 transition-colors hover:border-primary hover:bg-muted">
                     <ImageIcon className="mb-3 h-12 w-12 text-muted-foreground/50" />
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {t("addPost.clickToUpload")}
-                    </span>
-                    <span className="mt-1 text-xs text-muted-foreground/70">
-                      {t("addPost.imageFormats")}
-                    </span>
+                    <span className="text-sm font-medium text-muted-foreground">{t("addPost.clickToUpload")}</span>
+                    <span className="mt-1 text-xs text-muted-foreground/70">{t("addPost.imageFormats")}</span>
                   </button>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description">{t("addPost.description")}</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder={t("addPost.descriptionPlaceholder")}
-                  rows={4}
-                  required
-                  className="resize-none"
-                />
+                <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("addPost.descriptionPlaceholder")} rows={4} required className="resize-none" />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="phoneNumber">{t("addPost.phoneNumber")}</Label>
                 <div className="flex gap-2" dir="ltr">
-                  <select
-                    value={countryCode}
-                    onChange={(e) => setCountryCode(e.target.value)}
-                    className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    {countryCodes.map((country) => (
-                      <option key={country.code} value={country.code}>
-                        {country.label}
-                      </option>
-                    ))}
+                  <select value={countryCode} onChange={(e) => setCountryCode(e.target.value)} className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                    {countryCodes.map((country) => (<option key={country.code} value={country.code}>{country.label}</option>))}
                   </select>
-                  <Input
-                    id="phoneNumber"
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="1234567890"
-                    className="flex-1"
-                  />
+                  <Input id="phoneNumber" type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="1234567890" className="flex-1" />
                 </div>
               </div>
 
               <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate("/")}
-                  className="flex-1"
-                  disabled={isUploading}
-                >
-                  {t("addPost.cancel")}
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending || isUploading}
-                  className="flex-1 gradient-primary"
-                >
-                  {isUploading ? t("addPost.uploading") : t("addPost.create")}
-                </Button>
+                <Button type="button" variant="outline" onClick={() => navigate("/")} className="flex-1" disabled={isUploading}>{t("addPost.cancel")}</Button>
+                <Button type="submit" disabled={createMutation.isPending || isUploading} className="flex-1 gradient-primary">{isUploading ? t("addPost.uploading") : t("addPost.create")}</Button>
               </div>
             </form>
           </CardContent>
         </Card>
       </div>
-    </Layout >
+    </Layout>
   );
 }

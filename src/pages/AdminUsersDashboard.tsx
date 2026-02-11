@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Search, ToggleLeft, ToggleRight, Calendar, Mail, Shield, Settings } from "lucide-react";
+import { Users, Search, Calendar, Phone, Shield, Settings } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
@@ -15,12 +15,12 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface UserProfile {
   id: string;
-  email: string;
   full_name: string | null;
-  phone_number: string | null;
+  phone_number: string;
   created_at: string;
   user_id: string;
   invited_at?: string;
+  inviter_name?: string | null;
   days_since_invited?: number;
   is_invited_via_link?: boolean;
   user_preferences?: {
@@ -32,6 +32,7 @@ interface UserProfile {
 
 interface ReferralData {
   invited_user_id: string;
+  inviter_user_id: string;
   invited_at: string;
 }
 
@@ -50,34 +51,41 @@ export default function AdminUsersDashboard() {
     }
   }, [isAdmin, authLoading, navigate]);
 
-  // Fetch all users with their preferences
   const { data: users = [], isLoading: usersLoading } = useQuery<UserProfile[]>({
     queryKey: ["admin_users", currentPage, usersPerPage, searchTerm],
     queryFn: async () => {
       if (!isAdmin) return [];
 
       try {
-        // First fetch all users
+        // Get ALL referrals (admin can see all via RLS policy)
+        const { data: referrals, error: referralsError } = await supabase
+          .from("referrals")
+          .select("invited_user_id, inviter_user_id, invited_at")
+          .order("invited_at", { ascending: false });
+
+        if (referralsError) {
+          console.error("Error fetching referrals:", referralsError);
+          return [];
+        }
+
+        const typedReferrals = referrals as unknown as ReferralData[];
+        const invitedUserIds = typedReferrals?.map(r => r.invited_user_id) || [];
+
+        if (invitedUserIds.length === 0) return [];
+
+        // Fetch profiles only for invited users
         let profilesQuery = supabase
           .from("profiles")
-          .select(`
-            id,
-            email,
-            full_name,
-            phone_number,
-            created_at,
-            user_id
-          `)
+          .select("id, full_name, phone_number, created_at, user_id")
+          .in("user_id", invitedUserIds)
           .order("created_at", { ascending: false });
 
-        // Apply search filter if provided
         if (searchTerm) {
           profilesQuery = profilesQuery.or(
-            `full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone_number.ilike.%${searchTerm}%`
+            `full_name.ilike.%${searchTerm}%,phone_number.ilike.%${searchTerm}%`
           );
         }
 
-        // Apply pagination
         const { data: profiles, error: profilesError } = await profilesQuery.range(
           (currentPage - 1) * usersPerPage,
           currentPage * usersPerPage - 1
@@ -85,36 +93,23 @@ export default function AdminUsersDashboard() {
 
         if (profilesError) throw profilesError;
 
-        const profilesData = profiles as UserProfile[] | null;
-        if (!profilesData || profilesData.length === 0) return [];
+        const typedProfiles = profiles as unknown as UserProfile[];
+        if (!typedProfiles || typedProfiles.length === 0) return [];
 
-        // Get ALL referrals first, then filter for invited users
-        const { data: referrals, error: referralsError } = await supabase
-          .from("referrals")
-          .select("invited_user_id, invited_at")
-          .order("invited_at", { ascending: false });
+        // Get all inviter profiles for names
+        const inviterIds = [...new Set(typedReferrals.map(r => r.inviter_user_id))];
+        const { data: inviterProfiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", inviterIds);
 
-        if (referralsError) {
-          console.error("Error fetching referrals:", referralsError);
-        }
+        const inviterMap = new Map(
+          (inviterProfiles as unknown as Array<{ user_id: string; full_name: string | null }>)?.map(p => [p.user_id, p.full_name]) || []
+        );
 
-        console.log("Profiles found:", profilesData.length);
-        console.log("All referrals found:", referrals?.length || 0);
-
-        // Filter to only show users who were invited via links
-        const referralData = referrals as ReferralData[] | null;
-        const invitedUserIds = referralData?.map(r => r.invited_user_id) || [];
-        const usersInvitedViaLink = profilesData.filter(p => invitedUserIds.includes(p.user_id));
-
-        console.log("Users invited via link:", usersInvitedViaLink.length);
-
-        // If no users were invited via links, show all users with a flag
-        const finalUsersList = usersInvitedViaLink.length > 0 ? usersInvitedViaLink : profilesData;
-        const showAllUsersFlag = usersInvitedViaLink.length === 0;
-
-        // Calculate days since invited for each user
-        const usersWithDaysCounter = finalUsersList.map(profile => {
-          const referral = referralData?.find(r => r.invited_user_id === profile.user_id);
+        // Calculate days and map inviter names
+        const usersWithDetails = typedProfiles.map(profile => {
+          const referral = typedReferrals?.find(r => r.invited_user_id === profile.user_id);
           const invitedAt = referral?.invited_at || profile.created_at;
           const daysSinceInvited = Math.floor(
             (new Date().getTime() - new Date(invitedAt).getTime()) / (1000 * 60 * 60 * 24)
@@ -123,25 +118,23 @@ export default function AdminUsersDashboard() {
           return {
             ...profile,
             invited_at: invitedAt,
+            inviter_name: referral ? inviterMap.get(referral.inviter_user_id) || null : null,
             days_since_invited: daysSinceInvited,
-            is_invited_via_link: invitedUserIds.includes(profile.user_id)
+            is_invited_via_link: true,
           };
         });
 
-        // Then fetch preferences for these users
-        const { data: preferences, error: preferencesError } = await supabase
+        // Fetch preferences
+        const { data: preferences } = await supabase
           .from("user_preferences")
           .select("profile_id, show_days_counter, show_referral_bonus")
-          .in("profile_id", usersWithDaysCounter.map(p => p.id));
+          .in("profile_id", usersWithDetails.map(p => p.id));
 
-        if (preferencesError) {
-          console.error("Error fetching preferences:", preferencesError);
-        }
+        const typedPrefs = preferences as unknown as Array<{ profile_id: string; show_days_counter: boolean; show_referral_bonus: boolean }>;
 
-        // Merge profiles with preferences
-        return usersWithDaysCounter.map(profile => ({
+        return usersWithDetails.map(profile => ({
           ...profile,
-          user_preferences: preferences?.find(p => p.profile_id === profile.id) || null
+          user_preferences: typedPrefs?.find(p => p.profile_id === profile.id) || null
         }));
       } catch (error) {
         console.error("Query error:", error);
@@ -151,17 +144,13 @@ export default function AdminUsersDashboard() {
     enabled: !!isAdmin,
   });
 
-  // Toggle user preference mutation
   const toggleUserPreferenceMutation = useMutation({
     mutationFn: async ({ userId, preference, value }: { 
       userId: string; 
       preference: 'show_days_counter' | 'show_referral_bonus'; 
       value: boolean 
     }) => {
-      console.log("Toggling preference:", { userId, preference, value });
-      
       try {
-        // Check if preference exists for this user
         const { data: existingPrefs } = await supabase
           .from("user_preferences")
           .select("profile_id")
@@ -169,23 +158,19 @@ export default function AdminUsersDashboard() {
           .single();
 
         if (existingPrefs) {
-          // Update existing preference
           const { error } = await supabase
             .from("user_preferences")
-            .update({ [preference]: value })
+            .update({ [preference]: value } as Record<string, boolean>)
             .eq("profile_id", userId);
-
           if (error) throw error;
         } else {
-          // Insert new preference record with both settings
           const { error } = await supabase
             .from("user_preferences")
-            .insert({
+            .insert([{
               profile_id: userId,
               show_days_counter: preference === 'show_days_counter' ? value : true,
               show_referral_bonus: preference === 'show_referral_bonus' ? value : true,
-            });
-
+            }] as any);
           if (error) throw error;
         }
       } catch (error) {
@@ -204,19 +189,11 @@ export default function AdminUsersDashboard() {
   });
 
   const handleToggleDaysCounter = (userId: string, currentValue: boolean) => {
-    toggleUserPreferenceMutation.mutate({
-      userId,
-      preference: "show_days_counter",
-      value: !currentValue,
-    });
+    toggleUserPreferenceMutation.mutate({ userId, preference: "show_days_counter", value: !currentValue });
   };
 
   const handleToggleReferralBonus = (userId: string, currentValue: boolean) => {
-    toggleUserPreferenceMutation.mutate({
-      userId,
-      preference: "show_referral_bonus", 
-      value: !currentValue,
-    });
+    toggleUserPreferenceMutation.mutate({ userId, preference: "show_referral_bonus", value: !currentValue });
   };
 
   if (authLoading) {
@@ -236,29 +213,29 @@ export default function AdminUsersDashboard() {
       <div className="mx-auto max-w-6xl space-y-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl">
-            <Users className="inline-block ml-3 h-8 w-8" />
+          <h1 className="font-display text-2xl font-bold text-foreground sm:text-3xl md:text-4xl">
+            <Users className="inline-block ml-3 h-6 w-6 sm:h-8 sm:w-8" />
             لوحة تحكم المستخدمين
           </h1>
-          <p className="mt-1 text-muted-foreground">
-            إدارة المستخدمين الذين تمت دعوتهم عبر الرابط وتفعيل/تعطيل عداد الأيام لكل مستخدم
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+            جميع المستخدمين الذين تمت دعوتهم عبر روابط الإحالة
           </p>
         </div>
 
         {/* Search Bar */}
         <Card className="shadow-elegant">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               <div className="relative flex-1">
                 <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="البحث بالاسم، البريد الإلكتروني، أو رقم الهاتف..."
+                  placeholder="البحث بالاسم أو رقم الهاتف..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pr-10"
                 />
               </div>
-              <Button variant="outline" onClick={() => setSearchTerm("")}>
+              <Button variant="outline" onClick={() => setSearchTerm("")} className="shrink-0">
                 مسح
               </Button>
             </div>
@@ -268,14 +245,9 @@ export default function AdminUsersDashboard() {
         {/* Users List */}
         <Card className="shadow-elegant">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
               <Settings className="h-5 w-5 text-primary" />
-              المستخدمون ({users.length})
-              {users.some(u => !u.is_invited_via_link) && (
-                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                  يعرض جميع المستخدمين (لا يوجد مدعومون عبر الرابط)
-                </Badge>
-              )}
+              المستخدمون المدعوون ({users.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -294,41 +266,37 @@ export default function AdminUsersDashboard() {
                 {users.map((user) => (
                   <div
                     key={user.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex flex-col gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+                    {/* User Info */}
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 shrink-0">
                         <span className="text-sm font-medium text-primary">
-                          {user.full_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
+                          {user.full_name?.charAt(0) || "?"}
                         </span>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-medium truncate">
                             {user.full_name || "مستخدم غير معروف"}
                           </h3>
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            نشط
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs shrink-0">
+                            مدعو عبر الرابط
                           </Badge>
-                          {user.is_invited_via_link && (
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                              مدعوم عبر الرابط
-                            </Badge>
-                          )}
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            <span>{user.email}</span>
+                            <Phone className="h-3 w-3" />
+                            <span dir="ltr">{user.phone_number}</span>
                           </div>
-                          {user.phone_number && (
+                          {user.inviter_name && (
                             <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              <span>{user.phone_number}</span>
+                              <Shield className="h-3 w-3" />
+                              <span>دعوة من: {user.inviter_name}</span>
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-muted-foreground">
                           <span>
                             انضم: {new Date(user.created_at).toLocaleDateString("ar-EG")}
                           </span>
@@ -340,10 +308,11 @@ export default function AdminUsersDashboard() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      {/* Days Counter Toggle */}
+
+                    {/* Toggle Controls */}
+                    <div className="flex items-center gap-4 sm:gap-3 justify-end sm:justify-start shrink-0">
                       <div className="flex items-center gap-2">
-                        <Label htmlFor={`days-counter-${user.id}`} className="text-sm">
+                        <Label htmlFor={`days-counter-${user.id}`} className="text-xs sm:text-sm whitespace-nowrap">
                           عداد الأيام
                         </Label>
                         <Switch
@@ -359,9 +328,8 @@ export default function AdminUsersDashboard() {
                         />
                       </div>
 
-                      {/* Referral Bonus Toggle */}
                       <div className="flex items-center gap-2">
-                        <Label htmlFor={`referral-bonus-${user.id}`} className="text-sm">
+                        <Label htmlFor={`referral-bonus-${user.id}`} className="text-xs sm:text-sm whitespace-nowrap">
                           مكافآت
                         </Label>
                         <Switch
@@ -385,7 +353,7 @@ export default function AdminUsersDashboard() {
         </Card>
 
         {/* Pagination */}
-        {users.length > usersPerPage && (
+        {users.length >= usersPerPage && (
           <div className="flex items-center justify-center gap-2">
             <Button
               variant="outline"

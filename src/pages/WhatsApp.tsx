@@ -14,6 +14,14 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { t } from "@/i18n";
 
+interface Contact {
+  id: string;
+  name: string;
+  phone_number: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function WhatsApp() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -27,182 +35,97 @@ export default function WhatsApp() {
     }
   }, [isAdmin, authLoading, navigate]);
 
-  const { data: contacts = [], isLoading } = useQuery({
+  const { data: contacts = [], isLoading } = useQuery<Contact[]>({
     queryKey: ["contacts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contacts")
         .select("*")
         .order("created_at", { ascending: false });
-
       if (error) throw error;
-      return data;
+      return (data || []) as unknown as Contact[];
     },
     enabled: isAdmin,
   });
 
   const addContactMutation = useMutation({
     mutationFn: async ({ name, phoneNumber }: { name: string; phoneNumber: string }) => {
-      const { error } = await supabase.from("contacts").insert({
+      const { error } = await supabase.from("contacts").insert([{
         name,
         phone_number: phoneNumber,
-      });
+      }] as any);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
-      toast.success(t("whatsapp.contactAdded"));
-    },
-    onError: () => {
-      toast.error(t("whatsapp.contactAddFailed"));
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["contacts"] }); toast.success(t("whatsapp.contactAdded")); },
+    onError: () => { toast.error(t("whatsapp.contactAddFailed")); },
   });
 
   const deleteContactMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await supabase.from("contacts").delete().eq("id", id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
-      setSelectedIds(new Set());
-      toast.success(t("whatsapp.contactDeleted"));
-    },
-    onError: (error) => {
-      toast.error(t("whatsapp.contactDeleteFailed") + ": " + error.message);
-    },
+    mutationFn: async (id: string) => { await supabase.from("contacts").delete().eq("id", id); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["contacts"] }); setSelectedIds(new Set()); toast.success(t("whatsapp.contactDeleted")); },
+    onError: (error) => { toast.error(t("whatsapp.contactDeleteFailed") + ": " + error.message); },
   });
 
   const importContactsMutation = useMutation({
-    mutationFn: async (contacts: Array<{ name: string; phone_number: string }>) => {
-      console.log('Starting import with contacts:', contacts);
-      
-      // First check which contacts already exist
-      const phoneNumbers = contacts.map(c => c.phone_number);
-      console.log('Checking phone numbers:', phoneNumbers);
-      
+    mutationFn: async (contactsToImport: Array<{ name: string; phone_number: string }>) => {
+      const phoneNumbers = contactsToImport.map(c => c.phone_number);
       const { data: existingContacts, error: checkError } = await supabase
         .from("contacts")
         .select("phone_number")
         .in("phone_number", phoneNumbers);
+      if (checkError) throw checkError;
 
-      if (checkError) {
-        console.error('Error checking existing contacts:', checkError);
-        throw checkError;
-      }
+      const existingPhoneNumbers = new Set((existingContacts as unknown as Array<{ phone_number: string }>)?.map(c => c.phone_number) || []);
+      const newContacts = contactsToImport.filter(c => !existingPhoneNumbers.has(c.phone_number));
 
-      console.log('Existing contacts found:', existingContacts);
-      const existingPhoneNumbers = new Set(existingContacts?.map(c => c.phone_number) || []);
-      const newContacts = contacts.filter(c => !existingPhoneNumbers.has(c.phone_number));
-      
-      console.log('New contacts to insert:', newContacts);
+      if (newContacts.length === 0) return [];
 
-      if (newContacts.length === 0) {
-        console.log('No new contacts to import');
-        return []; // No new contacts to import
-      }
-
-      // Insert only new contacts
       const { data, error } = await supabase
         .from("contacts")
-        .insert(newContacts)
+        .insert(newContacts as any)
         .select();
 
-      if (error) {
-        console.error('Error inserting new contacts:', error);
-        throw error;
-      }
-
-      console.log('Successfully inserted contacts:', data);
-      return data || [];
+      if (error) throw error;
+      return (data || []) as unknown as Contact[];
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
       const successCount = data?.length || 0;
       const duplicateCount = variables.length - successCount;
-      
-      console.log(`Import success: ${successCount} new, ${duplicateCount} duplicates`);
-      
       if (successCount > 0) {
         toast.success(t("whatsapp.importSuccess", { count: successCount, duplicateCount }));
       } else {
         toast.warning(t("whatsapp.importWarning"));
       }
     },
-    onError: (error) => {
-      console.error('Import error:', error);
-      toast.error(t("whatsapp.importError") + ": " + error.message);
-    },
+    onError: (error) => { toast.error(t("whatsapp.importError") + ": " + error.message); },
   });
 
-  const selectedPhoneNumbers = useMemo(() => {
-    return contacts
-      .filter((c) => selectedIds.has(c.id))
-      .map((c) => c.phone_number);
-  }, [contacts, selectedIds]);
-
-  const selectedContacts = useMemo(() => {
-    return contacts.filter((c) => selectedIds.has(c.id));
-  }, [contacts, selectedIds]);
+  const selectedPhoneNumbers = useMemo(() => contacts.filter((c) => selectedIds.has(c.id)).map((c) => c.phone_number), [contacts, selectedIds]);
+  const selectedContacts = useMemo(() => contacts.filter((c) => selectedIds.has(c.id)), [contacts, selectedIds]);
 
   const handleToggleSelect = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+    setSelectedIds((prev) => { const next = new Set(prev); if (next.has(id)) { next.delete(id); } else { next.add(id); } return next; });
   };
-
-  const handleSelectAll = () => {
-    setSelectedIds(new Set(contacts.map((c) => c.id)));
-  };
-
-  const handleDeselectAll = () => {
-    setSelectedIds(new Set());
-  };
+  const handleSelectAll = () => { setSelectedIds(new Set(contacts.map((c) => c.id))); };
+  const handleDeselectAll = () => { setSelectedIds(new Set()); };
 
   if (authLoading) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center py-16">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        </div>
-      </Layout>
-    );
+    return (<Layout><div className="flex items-center justify-center py-16"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div></Layout>);
   }
-
-  if (!isAdmin) {
-    return null;
-  }
+  if (!isAdmin) return null;
 
   return (
     <Layout>
       <div className="mb-8">
-        <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl">
-          {t("whatsapp.messaging")}
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          {t("whatsapp.messagingSubtitle")}
-        </p>
+        <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl">{t("whatsapp.messaging")}</h1>
+        <p className="mt-1 text-muted-foreground">{t("whatsapp.messagingSubtitle")}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <AddContactForm
-            onAdd={(name, phoneNumber) =>
-              addContactMutation.mutate({ name, phoneNumber })
-            }
-          />
-
-          <ExcelContactImporter
-            onContactsImported={(contacts) =>
-              importContactsMutation.mutate(contacts)
-            }
-          />
-
+          <AddContactForm onAdd={(name, phoneNumber) => addContactMutation.mutate({ name, phoneNumber })} />
+          <ExcelContactImporter onContactsImported={(c) => importContactsMutation.mutate(c)} />
           <div className="grid gap-6 md:grid-cols-2">
             <Card className="shadow-card">
               <CardHeader className="pb-4">
@@ -213,42 +136,17 @@ export default function WhatsApp() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="space-y-2">
-                    {[...Array(3)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="h-12 animate-pulse rounded bg-muted"
-                      />
-                    ))}
-                  </div>
+                  <div className="space-y-2">{[...Array(3)].map((_, i) => (<div key={i} className="h-12 animate-pulse rounded bg-muted" />))}</div>
                 ) : (
-                  <ContactTable
-                    contacts={contacts}
-                    selectedIds={selectedIds}
-                    onToggleSelect={handleToggleSelect}
-                    onSelectAll={handleSelectAll}
-                    onDeselectAll={handleDeselectAll}
-                    onDelete={(id) => deleteContactMutation.mutate(id)}
-                  />
+                  <ContactTable contacts={contacts} selectedIds={selectedIds} onToggleSelect={handleToggleSelect} onSelectAll={handleSelectAll} onDeselectAll={handleDeselectAll} onDelete={(id) => deleteContactMutation.mutate(id)} />
                 )}
               </CardContent>
             </Card>
-
-            <ContactGroups
-              contacts={contacts}
-              selectedIds={selectedIds}
-              onSelectionChange={setSelectedIds}
-            />
+            <ContactGroups contacts={contacts} selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
           </div>
         </div>
-
         <div>
-          <ScheduledMessageComposer
-            selectedCount={selectedIds.size}
-            selectedPhoneNumbers={selectedPhoneNumbers}
-            selectedContacts={selectedContacts}
-            allContacts={contacts}
-          />
+          <ScheduledMessageComposer selectedCount={selectedIds.size} selectedPhoneNumbers={selectedPhoneNumbers} selectedContacts={selectedContacts} allContacts={contacts} />
         </div>
       </div>
     </Layout>

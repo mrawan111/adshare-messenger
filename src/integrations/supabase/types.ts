@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_settings: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           created_at: string
@@ -122,61 +146,39 @@ export type Database = {
         }
         Relationships: []
       }
-      admin_settings: {
-        Row: {
-          created_at: string
-          id: string
-          key: string
-          updated_at: string
-          value: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          key: string
-          updated_at?: string
-          value: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          key?: string
-          updated_at?: string
-          value?: string
-        }
-        Relationships: []
-      }
       user_preferences: {
         Row: {
           created_at: string
           id: string
           profile_id: string
-          show_days_counter: boolean
-          show_referral_bonus: boolean
+          show_days_counter: boolean | null
+          show_referral_bonus: boolean | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
           profile_id: string
-          show_days_counter?: boolean
-          show_referral_bonus?: boolean
+          show_days_counter?: boolean | null
+          show_referral_bonus?: boolean | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
           profile_id?: string
-          show_days_counter?: boolean
-          show_referral_bonus?: boolean
+          show_days_counter?: boolean | null
+          show_referral_bonus?: boolean | null
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKey: "profile_id"
-            references: "profiles"
-            fields: ["profile_id"]
-          }
+            foreignKeyName: "user_preferences_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_roles: {
@@ -208,6 +210,17 @@ export type Database = {
       add_user_as_contact: {
         Args: { _name: string; _phone_number: string }
         Returns: undefined
+      }
+      get_or_create_user_preferences: {
+        Args: { profile_uuid: string }
+        Returns: {
+          created_at: string
+          id: string
+          profile_id: string
+          show_days_counter: boolean
+          show_referral_bonus: boolean
+          updated_at: string
+        }[]
       }
       has_role: {
         Args: {

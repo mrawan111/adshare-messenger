@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 export interface UserPreferences {
   id: string;
-  user_id: string;
+  profile_id: string;
   show_days_counter: boolean;
   show_referral_bonus: boolean;
   created_at: string;
@@ -16,19 +16,27 @@ export function useUserPreferences() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Fetch user preferences
-  const { data: preferences, isLoading } = useQuery<UserPreferences>({
+  // Fetch user preferences using profile_id
+  const { data: preferences, isLoading } = useQuery<UserPreferences | null>({
     queryKey: ["user_preferences", user?.id],
     queryFn: async () => {
-      if (!user) throw new Error("User not authenticated");
+      if (!user) return null;
 
-      // Call the function to get or create preferences
+      // First get profile id
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!profile) return null;
+
       const { data, error } = await supabase
-        .rpc("get_or_create_user_preferences", { user_uuid: user.id })
+        .rpc("get_or_create_user_preferences", { profile_uuid: profile.id })
         .single();
 
       if (error) throw error;
-      return data;
+      return data as unknown as UserPreferences;
     },
     enabled: !!user,
   });
@@ -36,12 +44,12 @@ export function useUserPreferences() {
   // Update preferences mutation
   const updatePreferencesMutation = useMutation({
     mutationFn: async (updates: Partial<Pick<UserPreferences, 'show_days_counter' | 'show_referral_bonus'>>) => {
-      if (!user) throw new Error("User not authenticated");
+      if (!user || !preferences) throw new Error("User not authenticated");
 
       const { error } = await supabase
         .from("user_preferences")
-        .update(updates)
-        .eq("user_id", user.id);
+        .update(updates as Record<string, boolean>)
+        .eq("profile_id", preferences.profile_id);
 
       if (error) throw error;
     },
