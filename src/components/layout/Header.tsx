@@ -41,12 +41,9 @@ export function Header() {
         <Link to="/" className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg overflow-hidden bg-card">
             <img
-              src="/logo.png"
+              src="/favicon.ico"
               alt={t("appName")}
               className="h-full w-full object-contain"
-              onError={(e) => {
-                e.currentTarget.src = "/favicon.ico";
-              }}
             />
           </div>
           <span className="font-display text-xl font-bold text-foreground">

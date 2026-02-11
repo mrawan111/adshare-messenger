@@ -180,12 +180,9 @@ export default function Auth() {
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl overflow-hidden bg-card">
             <img
-              src="/logo.png"
+              src="/favicon.ico"
               alt={t("appName")}
               className="h-full w-full object-contain"
-              onError={(e) => {
-                e.currentTarget.src = "/favicon.ico";
-              }}
             />
           </div>
           <CardTitle className="font-display text-2xl">{t("appName")}</CardTitle>
