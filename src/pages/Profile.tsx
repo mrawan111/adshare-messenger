@@ -12,7 +12,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useAdminSettings } from "@/hooks/useAdminSettings";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
-import { UserPreferencesPanel } from "@/components/user/UserPreferencesPanel";
 import { t } from "@/i18n";
 
 interface ProfileData {
@@ -227,8 +226,6 @@ export default function Profile() {
             </div>
           </CardContent>
         </Card>
-
-        <UserPreferencesPanel />
 
         <Card className="shadow-elegant">
           <CardHeader><CardTitle>حالة الحساب</CardTitle></CardHeader>

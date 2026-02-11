@@ -62,10 +62,10 @@ export default function Invite() {
 
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, full_name, phone_number")
+        .select("user_id, full_name, phone_number, created_at")
         .in("user_id", invitedUserIds);
 
-      const typedProfiles = profiles as unknown as Array<{ user_id: string; full_name: string | null; phone_number: string | null }>;
+      const typedProfiles = profiles as unknown as Array<{ user_id: string; full_name: string | null; phone_number: string | null; created_at: string }>;
 
       return typedData.map((referral) => {
         const profile = typedProfiles?.find((p) => p.user_id === referral.invited_user_id);
@@ -75,7 +75,7 @@ export default function Invite() {
           invited_at: referral.invited_at,
           invited_name: profile?.full_name || null,
           invited_phone: profile?.phone_number || null,
-          days_since_invited: Math.floor((Date.now() - new Date(referral.invited_at).getTime()) / (1000 * 60 * 60 * 24)),
+          days_since_invited: Math.floor((Date.now() - new Date((profile?.created_at || referral.invited_at)).getTime()) / (1000 * 60 * 60 * 24)),
         };
       });
     },
