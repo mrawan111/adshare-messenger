@@ -50,13 +50,32 @@ export default function WhatsApp() {
 
   const addContactMutation = useMutation({
     mutationFn: async ({ name, phoneNumber }: { name: string; phoneNumber: string }) => {
+      const cleanedPhoneNumber = phoneNumber.trim();
+      if (!cleanedPhoneNumber) return { inserted: false, isDuplicate: true };
+
+      const { data: existingContact, error: checkError } = await supabase
+        .from("contacts")
+        .select("id")
+        .eq("phone_number", cleanedPhoneNumber)
+        .maybeSingle();
+      if (checkError) throw checkError;
+      if (existingContact) return { inserted: false, isDuplicate: true };
+
       const { error } = await supabase.from("contacts").insert([{
         name,
-        phone_number: phoneNumber,
+        phone_number: cleanedPhoneNumber,
       }] as any);
       if (error) throw error;
+      return { inserted: true, isDuplicate: false };
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["contacts"] }); toast.success(t("whatsapp.contactAdded")); },
+    onSuccess: (result) => {
+      if (result?.isDuplicate) {
+        toast.warning("Phone number already exists. Duplicate skipped.");
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      toast.success(t("whatsapp.contactAdded"));
+    },
     onError: () => { toast.error(t("whatsapp.contactAddFailed")); },
   });
 
@@ -68,15 +87,32 @@ export default function WhatsApp() {
 
   const importContactsMutation = useMutation({
     mutationFn: async (contactsToImport: Array<{ name: string; phone_number: string }>) => {
-      const phoneNumbers = contactsToImport.map(c => c.phone_number);
+      const uniqueIncomingContacts: Array<{ name: string; phone_number: string }> = [];
+      const seenIncomingPhones = new Set<string>();
+
+      contactsToImport.forEach((contact) => {
+        const cleanedPhone = contact.phone_number.trim();
+        if (!cleanedPhone || seenIncomingPhones.has(cleanedPhone)) return;
+        seenIncomingPhones.add(cleanedPhone);
+        uniqueIncomingContacts.push({
+          name: contact.name?.trim() || `Contact ${cleanedPhone}`,
+          phone_number: cleanedPhone,
+        });
+      });
+
+      if (uniqueIncomingContacts.length === 0) return [];
+
       const { data: existingContacts, error: checkError } = await supabase
         .from("contacts")
-        .select("phone_number")
-        .in("phone_number", phoneNumbers);
+        .select("phone_number");
       if (checkError) throw checkError;
 
-      const existingPhoneNumbers = new Set((existingContacts as unknown as Array<{ phone_number: string }>)?.map(c => c.phone_number) || []);
-      const newContacts = contactsToImport.filter(c => !existingPhoneNumbers.has(c.phone_number));
+      const existingPhoneNumbers = new Set(
+        ((existingContacts as unknown as Array<{ phone_number: string }>) || [])
+          .map((c) => c.phone_number.trim())
+          .filter(Boolean)
+      );
+      const newContacts = uniqueIncomingContacts.filter((c) => !existingPhoneNumbers.has(c.phone_number));
 
       if (newContacts.length === 0) return [];
 

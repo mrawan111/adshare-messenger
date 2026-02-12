@@ -433,9 +433,17 @@ export function ScheduledMessageComposer({ selectedCount, selectedPhoneNumbers, 
 
   const exportToExcel = () => {
     try {
+      const seenPhoneNumbers = new Set<string>();
+      const uniqueContacts = selectedContacts.filter((contact) => {
+        const phone = contact.phone_number.trim();
+        if (!phone || seenPhoneNumbers.has(phone)) return false;
+        seenPhoneNumbers.add(phone);
+        return true;
+      });
+
       const wsData = [
         ['Name', 'Phone Number'],
-        ...selectedContacts.map(contact => [contact.name, contact.phone_number])
+        ...uniqueContacts.map(contact => [contact.name, contact.phone_number.trim()])
       ];
 
       const ws = XLSX.utils.aoa_to_sheet(wsData);

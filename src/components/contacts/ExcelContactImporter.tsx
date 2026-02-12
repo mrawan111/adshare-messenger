@@ -23,6 +23,7 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
+  const [allProcessedContacts, setAllProcessedContacts] = useState<Contact[]>([]);
   const [previewData, setPreviewData] = useState<Contact[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [showPreview, setShowPreview] = useState(false);
@@ -83,6 +84,7 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
           
           const processedContacts: Contact[] = [];
           const newErrors: string[] = [];
+          const seenPhoneNumbers = new Set<string>();
           
           jsonData.forEach((row: Record<string, unknown>, index: number) => {
             const rowNum = index + 2;
@@ -115,6 +117,12 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
                 formattedPhone = '+20' + cleanPhone;
               }
             }
+
+            if (seenPhoneNumbers.has(formattedPhone)) {
+              newErrors.push(`Row ${rowNum}: Duplicate phone number skipped`);
+              return;
+            }
+            seenPhoneNumbers.add(formattedPhone);
             
             processedContacts.push({
               name: name || `Contact ${formattedPhone}`,
@@ -124,6 +132,7 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
           
           setImportProgress(100);
           setErrors(newErrors);
+          setAllProcessedContacts(processedContacts);
           setPreviewData(processedContacts.slice(0, 10)); // Show first 10 for preview
           setShowPreview(true);
           
@@ -148,13 +157,14 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
   };
 
   const confirmImport = () => {
-    if (previewData.length === 0) return;
+    if (allProcessedContacts.length === 0) return;
     
-    console.log('Importing contacts:', previewData);
-    onContactsImported(previewData);
+    console.log('Importing contacts:', allProcessedContacts);
+    onContactsImported(allProcessedContacts);
     
     // Reset form
     setFile(null);
+    setAllProcessedContacts([]);
     setPreviewData([]);
     setShowPreview(false);
     setErrors([]);
@@ -166,6 +176,7 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
 
   const resetForm = () => {
     setFile(null);
+    setAllProcessedContacts([]);
     setPreviewData([]);
     setShowPreview(false);
     setErrors([]);
@@ -250,7 +261,7 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-medium">{t("whatsapp.previewContacts")}</h3>
-              <Badge variant="outline">{previewData.length} contacts</Badge>
+              <Badge variant="outline">{allProcessedContacts.length} contacts</Badge>
             </div>
             
             {/* Preview Table */}
@@ -288,7 +299,7 @@ export function ExcelContactImporter({ onContactsImported }: ExcelContactImporte
             <div className="flex gap-2">
               <Button onClick={confirmImport} className="flex-1">
                 <CheckCircle className="mr-2 h-4 w-4" />
-                {t("whatsapp.importContacts", { count: previewData.length })}
+                {t("whatsapp.importContacts", { count: allProcessedContacts.length })}
               </Button>
               <Button variant="outline" onClick={resetForm}>
                 {t("whatsapp.cancel")}
