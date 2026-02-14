@@ -12,9 +12,20 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { t } from "@/i18n";
 
-// Helper: convert phone number to a fake email for Supabase auth
+// Helper: convert Arabic numerals and remove non-digit chars
+const toLatinDigits = (value: string) => {
+  return value
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 1632))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 1776));
+};
+
+const extractDigits = (value: string) => {
+  return toLatinDigits(value).replace(/\D/g, "");
+};
+
+// Helper: convert phone number to canonical Egyptian local format (01xxxxxxxxx)
 const normalizeEgyptianPhone = (phone: string) => {
-  const digits = phone.replace(/\D/g, "");
+  const digits = extractDigits(phone);
 
   if (digits.startsWith("0020") && digits.length === 14) {
     return `0${digits.slice(4)}`;
@@ -36,8 +47,26 @@ const phoneToEmail = (phone: string) => {
 };
 
 const rawDigitsPhoneToEmail = (phone: string) => {
-  const digits = phone.replace(/\D/g, "");
+  const digits = extractDigits(phone);
   return `${digits}@phone.local`;
+};
+
+const buildCandidateEmails = (phone: string) => {
+  const rawDigits = extractDigits(phone);
+  const normalized = normalizeEgyptianPhone(phone);
+  const variants = new Set<string>();
+
+  if (normalized) variants.add(normalized);
+  if (rawDigits) variants.add(rawDigits);
+
+  if (normalized.startsWith("0") && normalized.length === 11) {
+    const withoutLeadingZero = normalized.slice(1); // 10-digit mobile
+    variants.add(withoutLeadingZero);
+    variants.add(`20${withoutLeadingZero}`);
+    variants.add(`0020${withoutLeadingZero}`);
+  }
+
+  return [...variants].map((digits) => `${digits}@phone.local`);
 };
 
 const loginSchema = z.object({
@@ -96,9 +125,9 @@ export default function Auth() {
     try {
       const normalizedEmail = phoneToEmail(normalizedLoginPhone);
       const legacyEmail = rawDigitsPhoneToEmail(loginPhone);
-      const candidateEmails = legacyEmail !== normalizedEmail
-        ? [normalizedEmail, legacyEmail]
-        : [normalizedEmail];
+      const candidateEmails = Array.from(
+        new Set([normalizedEmail, legacyEmail, ...buildCandidateEmails(loginPhone)])
+      );
 
       let signedIn = false;
       let lastError: { message: string } | null = null;
