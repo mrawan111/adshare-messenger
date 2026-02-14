@@ -150,6 +150,24 @@ export default function Auth() {
         return;
       }
 
+      // Check if Vodafone Cash number already exists
+      const { data: existingVodafoneCash, error: vodafoneCheckError } = await supabase
+        .from('profiles')
+        .select('vodafone_cash')
+        .eq('vodafone_cash', normalizedVodafoneCash)
+        .limit(1);
+
+      if (vodafoneCheckError) {
+        console.error("Error checking Vodafone Cash:", vodafoneCheckError);
+        toast.error(t("auth.unexpectedError"));
+        return;
+      }
+
+      if (existingVodafoneCash && existingVodafoneCash.length > 0) {
+        toast.error("رقم محفظة فودافون كاش مسجل بالفعل.");
+        return;
+      }
+
       const fakeEmail = phoneToEmail(normalizedSignupPhone);
       
       const { data, error } = await supabase.auth.signUp({
