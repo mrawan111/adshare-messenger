@@ -13,9 +13,26 @@ import { useAuth } from "@/contexts/AuthContext";
 import { t } from "@/i18n";
 
 // Helper: convert phone number to a fake email for Supabase auth
+const normalizeEgyptianPhone = (phone: string) => {
+  const digits = phone.replace(/\D/g, "");
+
+  if (digits.startsWith("0020") && digits.length === 14) {
+    return `0${digits.slice(4)}`;
+  }
+
+  if (digits.startsWith("20") && digits.length === 12) {
+    return `0${digits.slice(2)}`;
+  }
+
+  if (digits.startsWith("1") && digits.length === 10) {
+    return `0${digits}`;
+  }
+
+  return digits;
+};
+
 const phoneToEmail = (phone: string) => {
-  const cleaned = phone.replace(/\D/g, "");
-  return `${cleaned}@phone.local`;
+  return `${normalizeEgyptianPhone(phone)}@phone.local`;
 };
 
 const loginSchema = z.object({
@@ -62,8 +79,9 @@ export default function Auth() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const validation = loginSchema.safeParse({ phone: loginPhone, password: loginPassword });
+
+    const normalizedLoginPhone = normalizeEgyptianPhone(loginPhone);
+    const validation = loginSchema.safeParse({ phone: normalizedLoginPhone, password: loginPassword });
     if (!validation.success) {
       toast.error(validation.error.errors[0].message);
       return;
@@ -71,7 +89,7 @@ export default function Auth() {
 
     setIsSubmitting(true);
     try {
-      const fakeEmail = phoneToEmail(loginPhone);
+      const fakeEmail = phoneToEmail(normalizedLoginPhone);
       const { error } = await supabase.auth.signInWithPassword({
         email: fakeEmail,
         password: loginPassword,
@@ -97,11 +115,13 @@ export default function Auth() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    const normalizedSignupPhone = normalizeEgyptianPhone(signupPhone);
+    const normalizedVodafoneCash = normalizeEgyptianPhone(signupVodafoneCash);
     const validation = signupSchema.safeParse({
       fullName: signupName,
-      phone: signupPhone,
-      vodafoneCash: signupVodafoneCash,
+      phone: normalizedSignupPhone,
+      vodafoneCash: normalizedVodafoneCash,
       password: signupPassword,
     });
     
@@ -116,7 +136,7 @@ export default function Auth() {
       const { data: existingUsers, error: checkError } = await supabase
         .from('profiles')
         .select('phone_number')
-        .eq('phone_number', signupPhone)
+        .eq('phone_number', normalizedSignupPhone)
         .limit(1);
 
       if (checkError) {
@@ -130,7 +150,7 @@ export default function Auth() {
         return;
       }
 
-      const fakeEmail = phoneToEmail(signupPhone);
+      const fakeEmail = phoneToEmail(normalizedSignupPhone);
       
       const { data, error } = await supabase.auth.signUp({
         email: fakeEmail,
@@ -138,8 +158,8 @@ export default function Auth() {
         options: {
           data: {
             full_name: signupName,
-            phone_number: signupPhone,
-            vodafone_cash: signupVodafoneCash,
+            phone_number: normalizedSignupPhone,
+            vodafone_cash: normalizedVodafoneCash,
             referral_code: referralCode || null,
           },
         },
