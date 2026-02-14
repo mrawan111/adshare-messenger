@@ -35,6 +35,11 @@ const phoneToEmail = (phone: string) => {
   return `${normalizeEgyptianPhone(phone)}@phone.local`;
 };
 
+const rawDigitsPhoneToEmail = (phone: string) => {
+  const digits = phone.replace(/\D/g, "");
+  return `${digits}@phone.local`;
+};
+
 const loginSchema = z.object({
   phone: z.string().min(10, t("auth.phoneMin")),
   password: z.string().min(6, t("auth.passwordMin")),
@@ -89,17 +94,39 @@ export default function Auth() {
 
     setIsSubmitting(true);
     try {
-      const fakeEmail = phoneToEmail(normalizedLoginPhone);
-      const { error } = await supabase.auth.signInWithPassword({
-        email: fakeEmail,
-        password: loginPassword,
-      });
+      const normalizedEmail = phoneToEmail(normalizedLoginPhone);
+      const legacyEmail = rawDigitsPhoneToEmail(loginPhone);
+      const candidateEmails = legacyEmail !== normalizedEmail
+        ? [normalizedEmail, legacyEmail]
+        : [normalizedEmail];
 
-      if (error) {
-        if (error.message.includes("Invalid login credentials")) {
+      let signedIn = false;
+      let lastError: { message: string } | null = null;
+
+      for (const email of candidateEmails) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password: loginPassword,
+        });
+
+        if (!error) {
+          signedIn = true;
+          break;
+        }
+
+        lastError = error;
+
+        if (!error.message.includes("Invalid login credentials")) {
+          toast.error(error.message);
+          return;
+        }
+      }
+
+      if (!signedIn) {
+        if (lastError?.message.includes("Invalid login credentials")) {
           toast.error("رقم الهاتف أو كلمة المرور غير صحيحة");
         } else {
-          toast.error(error.message);
+          toast.error(lastError?.message || t("auth.unexpectedError"));
         }
         return;
       }
@@ -184,8 +211,14 @@ export default function Auth() {
       });
 
       if (error) {
-        if (error.message.includes("already registered") || error.message.includes("User already registered")) {
+        if (
+          error.message.includes("PHONE_NUMBER_ALREADY_EXISTS") ||
+          error.message.includes("already registered") ||
+          error.message.includes("User already registered")
+        ) {
           toast.error("رقم الهاتف مسجل بالفعل. يرجى تسجيل الدخول.");
+        } else if (error.message.includes("VODAFONE_CASH_ALREADY_EXISTS")) {
+          toast.error("رقم محفظة فودافون كاش مسجل بالفعل.");
         } else {
           toast.error(error.message);
         }
@@ -363,3 +396,5 @@ export default function Auth() {
     </div>
   );
 }
+
+
